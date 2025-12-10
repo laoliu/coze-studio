@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComponentInvokeNodeConfig",
+  "description": "组件调用节点配置",
+  "type": "object",
+  "required": ["component_id", "component_type"],
+  "properties": {
+    "component_id": {
+      "type": "string",
+      "title": "组件ID",
+      "description": "要调用的组件ID",
+      "examples": ["mcp_tool_web_search", "visualization_chart", "export_pdf"]
+    },
+    "component_type": {
+      "type": "string",
+      "title": "组件类型",
+      "description": "组件的类型",
+      "enum": [
+        "mcp_tool",
+        "visualization",
+        "export",
+        "interactive_dialog"
+      ],
+      "enumNames": [
+        "MCP工具",
+        "可视化",
+        "导出",
+        "交互式对话"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "title": "输入参数",
+      "description": "传递给组件的输入参数",
+      "additionalProperties": true
+    },
+    "config": {
+      "type": "object",
+      "title": "组件配置",
+      "description": "组件的特定配置",
+      "additionalProperties": true
+    },
+    "output_mapping": {
+      "type": "object",
+      "title": "输出映射",
+      "description": "将组件返回值映射到工作流变量",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "timeout": {
+      "type": "integer",
+      "title": "超时时间（毫秒）",
+      "description": "节点执行超时时间",
+      "default": 30000,
+      "minimum": 1000,
+      "maximum": 300000
+    }
+  }
+}

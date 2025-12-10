@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AdapterInvokeNodeConfig",
+  "description": "适配器调用节点配置",
+  "type": "object",
+  "required": ["adapter_id", "method"],
+  "properties": {
+    "adapter_id": {
+      "type": "string",
+      "title": "适配器ID",
+      "description": "要调用的领域适配器ID",
+      "examples": ["k12_adapter", "higher_education_adapter"]
+    },
+    "method": {
+      "type": "string",
+      "title": "方法名称",
+      "description": "要调用的适配器方法",
+      "enum": [
+        "parse_request",
+        "generate_objectives",
+        "discover_content",
+        "customize_workflow",
+        "format_output",
+        "validate_output"
+      ],
+      "enumNames": [
+        "解析请求",
+        "生成目标",
+        "发现内容",
+        "定制工作流",
+        "格式化输出",
+        "验证输出"
+      ]
+    },
+    "input_mapping": {
+      "type": "object",
+      "title": "输入映射",
+      "description": "将工作流变量映射到方法参数",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "output_mapping": {
+      "type": "object",
+      "title": "输出映射",
+      "description": "将方法返回值映射到工作流变量",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "timeout": {
+      "type": "integer",
+      "title": "超时时间（毫秒）",
+      "description": "节点执行超时时间",
+      "default": 30000,
+      "minimum": 1000,
+      "maximum": 300000
+    },
+    "retry": {
+      "type": "object",
+      "title": "重试配置",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "title": "最大重试次数",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 10
+        },
+        "backoff_ms": {
+          "type": "integer",
+          "title": "重试间隔（毫秒）",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CapabilityInvokeNodeConfig",
+  "description": "AI能力调用节点配置",
+  "type": "object",
+  "required": ["capability_id", "capability_type"],
+  "properties": {
+    "capability_id": {
+      "type": "string",
+      "title": "能力ID",
+      "description": "要调用的AI能力ID",
+      "examples": ["intent_recognizer", "objective_generator", "content_discovery"]
+    },
+    "capability_type": {
+      "type": "string",
+      "title": "能力类型",
+      "description": "AI能力的类型",
+      "enum": [
+        "intent_recognition",
+        "objective_generation",
+        "content_discovery",
+        "narrative_generation",
+        "multimodal_generation",
+        "quality_assessment",
+        "localization"
+      ],
+      "enumNames": [
+        "意图识别",
+        "目标生成",
+        "内容发现",
+        "故事化叙述生成",
+        "多模态生成",
+        "质量评估",
+        "本地化"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "title": "输入参数",
+      "description": "传递给AI能力的输入参数",
+      "additionalProperties": true
+    },
+    "model_config": {
+      "type": "object",
+      "title": "模型配置",
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "模型名称",
+          "examples": ["gpt-4", "gpt-3.5-turbo", "claude-3"]
+        },
+        "temperature": {
+          "type": "number",
+          "title": "温度",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "max_tokens": {
+          "type": "integer",
+          "title": "最大Token数",
+          "default": 2000,
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "top_p": {
+          "type": "number",
+          "title": "Top P",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "title": "上下文",
+      "description": "额外的上下文信息",
+      "additionalProperties": true
+    },
+    "output_mapping": {
+      "type": "object",
+      "title": "输出映射",
+      "description": "将能力返回值映射到工作流变量",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "timeout": {
+      "type": "integer",
+      "title": "超时时间（毫秒）",
+      "description": "节点执行超时时间",
+      "default": 60000,
+      "minimum": 1000,
+      "maximum": 300000
+    }
+  }
+}
