@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/coze-studio/backend/domain/adapter/entity"
-	"github.com/coze-studio/backend/domain/adapter/service"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/entity"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/service"
 )
 
 // DemoK12Adapter 演示K12适配器的使用

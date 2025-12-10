@@ -5,8 +5,8 @@ package examples
 import (
 	"fmt"
 
-	"github.com/coze-studio/backend/domain/adapter"
-	"github.com/coze-studio/backend/domain/adapter/entity"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/entity"
 )
 
 // K12Adapter K12教育领域适配器

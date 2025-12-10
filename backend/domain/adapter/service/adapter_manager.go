@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/coze-studio/backend/domain/adapter"
-	"github.com/coze-studio/backend/domain/adapter/entity"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/entity"
 )
 
 var (
