@@ -2,6 +2,8 @@
 
 package entity
 
+import "context"
+
 // AdapterInfo 适配器信息（轻量级版本，用于接口返回）
 type AdapterInfo struct {
 AdapterID    string               `json:"adapter_id"`
@@ -136,3 +138,45 @@ Description string `json:"description"`                   // 描述
 Location    string `json:"location,omitempty"`            // 位置
 Suggestion  string `json:"suggestion,omitempty"`          // 建议
 }
+
+// AdapterContext 适配器执行上下文
+type AdapterContext struct {
+	Context  context.Context
+	Input    *UserInput
+	Domain   string
+	Grade    int
+	Metadata map[string]any
+}
+
+// AdapterOutput 适配器输出结果
+type AdapterOutput struct {
+	Objectives []LearningObjective `json:"objectives"`     // 学习目标
+	Contents   []ContentItem       `json:"contents"`       // 内容列表
+	Activities []Activity          `json:"activities"`     // 活动列表
+	Assessment *Assessment         `json:"assessment"`     // 评估方案
+	Metadata   map[string]any      `json:"metadata"`       // 元数据
+}
+
+// Activity 学习活动
+type Activity struct {
+	ID          string         `json:"id"`
+	Type        string         `json:"type"`          // 活动类型：讨论、实验、练习等
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Duration    int            `json:"duration"`      // 持续时间（分钟）
+	Materials   []string       `json:"materials"`     // 所需材料
+	Steps       []string       `json:"steps"`         // 活动步骤
+	Metadata    map[string]any `json:"metadata"`
+}
+
+// Assessment 评估方案
+type Assessment struct {
+	Type        string         `json:"type"`          // 评估类型：测验、项目、观察等
+	Description string         `json:"description"`
+	Criteria    []string       `json:"criteria"`      // 评估标准
+	Rubric      map[string]any `json:"rubric"`        // 评分标准
+	Metadata    map[string]any `json:"metadata"`
+}
+
+// ContentItem 内容项（别名，兼容不同的命名）
+type ContentItem = Content

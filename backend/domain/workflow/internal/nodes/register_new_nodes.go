@@ -16,88 +16,44 @@
 
 package nodes
 
-import (
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/adapter"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/capability"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/component"
-)
+// 注意：循环引用问题修复
+// 由于各个节点包（adapter, capability, component）都在自己的 init() 函数中
+// 自动注册了节点，所以不需要在这里显式导入和注册
+// 导入这些包会造成循环引用：nodes -> nodes/adapter -> nodes
+// 
+// import (
+// 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/adapter"
+// 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/capability"
+// 	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/nodes/component"
+// )
 
 // RegisterAllNewNodes 注册所有新增的工作流节点
-// 应该在应用启动时调用此函数
+// 注意：由于各节点包已经在 init() 中自动注册，此函数当前为空操作
+// 保留此函数是为了向后兼容和未来可能的显式注册需求
 func RegisterAllNewNodes() {
-	// 注册适配器节点
-	registerAdapterNodes()
-
-	// 注册AI能力节点
-	registerCapabilityNodes()
-
-	// 注册组件节点
-	registerComponentNodes()
+	// 节点已经通过各自包的 init() 函数自动注册
+	// 不需要显式调用注册函数
+	// 
+	// 原先的设计：
+	// - 注册适配器节点
+	// - 注册AI能力节点  
+	// - 注册组件节点
 }
 
-// registerAdapterNodes 注册适配器节点
-func registerAdapterNodes() {
-	// 创建适配器调用节点的NodeAdaptor
-	adapterInvokeAdaptor := adapter.NewAdapterInvokeNodeAdaptor()
-
-	// 注册到全局节点注册表
-	// 注意：这里假设有一个全局的 RegisterNodeAdaptor 函数
-	// 实际实现应该参考现有的节点注册逻辑
-	// RegisterNodeAdaptor("adapter_invoke", adapterInvokeAdaptor)
-	_ = adapterInvokeAdaptor
-}
-
-// registerCapabilityNodes 注册AI能力节点
-func registerCapabilityNodes() {
-	// 通用能力调用节点
-	capabilityInvokeAdaptor := capability.NewCapabilityInvokeNodeAdaptor()
-
-	// 目标生成节点
-	objectiveGeneratorAdaptor := capability.NewObjectiveGeneratorNodeAdaptor()
-
-	// 内容发现节点
-	contentDiscoveryAdaptor := capability.NewContentDiscoveryNodeAdaptor()
-
-	// 故事化叙述生成节点
-	narrativeGeneratorAdaptor := capability.NewNarrativeGeneratorNodeAdaptor()
-
-	// 质量评估节点
-	qualityAssessorAdaptor := capability.NewQualityAssessorNodeAdaptor()
-
-	// 注册所有能力节点
-	// RegisterNodeAdaptor("capability_invoke", capabilityInvokeAdaptor)
-	// RegisterNodeAdaptor("objective_generator", objectiveGeneratorAdaptor)
-	// RegisterNodeAdaptor("content_discovery", contentDiscoveryAdaptor)
-	// RegisterNodeAdaptor("narrative_generator", narrativeGeneratorAdaptor)
-	// RegisterNodeAdaptor("quality_assessor", qualityAssessorAdaptor)
-	_, _, _, _, _ = capabilityInvokeAdaptor, objectiveGeneratorAdaptor, contentDiscoveryAdaptor,
-		narrativeGeneratorAdaptor, qualityAssessorAdaptor
-}
-
-// registerComponentNodes 注册组件节点
-func registerComponentNodes() {
-	// 通用组件调用节点
-	componentInvokeAdaptor := component.NewComponentInvokeNodeAdaptor()
-
-	// MCP工具节点
-	mcpToolAdaptor := component.NewMCPToolNodeAdaptor()
-
-	// 可视化节点
-	visualizationAdaptor := component.NewVisualizationNodeAdaptor()
-
-	// 导出节点
-	exportAdaptor := component.NewExportNodeAdaptor()
-
-	// 注册所有组件节点
-	// RegisterNodeAdaptor("component_invoke", componentInvokeAdaptor)
-	// RegisterNodeAdaptor("mcp_tool", mcpToolAdaptor)
-	// RegisterNodeAdaptor("visualization", visualizationAdaptor)
-	// RegisterNodeAdaptor("export", exportAdaptor)
-	_, _, _, _ = componentInvokeAdaptor, mcpToolAdaptor, visualizationAdaptor, exportAdaptor
-}
-
-// init 函数可以在包导入时自动注册节点
-// 但是建议通过显式调用 RegisterAllNewNodes() 来注册，以便更好地控制初始化顺序
-// func init() {
-// 	RegisterAllNewNodes()
+// 以下函数已废弃 - 各节点包通过 init() 自动注册
+// 
+// // registerAdapterNodes 注册适配器节点
+// func registerAdapterNodes() {
+// 	// 节点已在 adapter/adapter_invoke.go 的 init() 中注册
 // }
+// 
+// // registerCapabilityNodes 注册AI能力节点
+// func registerCapabilityNodes() {
+// 	// 节点已在各 capability 文件的 init() 中注册
+// }
+// 
+// // registerComponentNodes 注册组件节点
+// func registerComponentNodes() {
+// 	// 节点已在各 component 文件的 init() 中注册
+// }
+

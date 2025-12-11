@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/coze-studio/backend/domain/component"
+	"github.com/coze-dev/coze-studio/backend/domain/component"
 )
 
 var (

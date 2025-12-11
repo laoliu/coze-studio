@@ -302,7 +302,7 @@ class MCPClient:
 
 
 # 使用示例
-mcp_client = MCPClient("http://localhost:3000")
+mcp_client = MCPClient("http://localhost:8888")
 
 # 列出所有可用工具
 tools = await mcp_client.list_tools()
@@ -510,7 +510,7 @@ class ToolManager:
 tool_manager = ToolManager()
 
 # 1. 注册MCP服务器的工具
-await tool_manager.register_mcp_server("http://localhost:3000")
+await tool_manager.register_mcp_server("http://localhost:8888")
 
 # 2. 注册本地Python函数
 def calculate(expression: str) -> float:
@@ -709,7 +709,7 @@ class WikipediaToolComponent:
         self.use_mcp = os.getenv("USE_MCP_WIKIPEDIA", "false") == "true"
         
         if self.use_mcp:
-            self.mcp_client = MCPClient("http://localhost:3000")
+            self.mcp_client = MCPClient("http://localhost:8888")
         else:
             self.wikipedia = wikipediaapi.Wikipedia('en')
     

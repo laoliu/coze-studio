@@ -1,0 +1,58 @@
+# Adapter 配置文件示例
+
+## LLM 配置
+
+### OpenAI
+llm:
+  provider: openai
+  model: gpt-4
+  api_key: sk-xxx
+  base_url: https://api.openai.com/v1  # 可选
+  temperature: 0.7
+  max_tokens: 2000
+
+### 字节跳动 ARK
+llm:
+  provider: ark
+  model: doubao-pro-32k
+  api_key: your-ark-api-key
+  temperature: 0.7
+  max_tokens: 2000
+
+### Claude
+llm:
+  provider: claude
+  model: claude-3-opus-20240229
+  api_key: sk-ant-xxx
+  temperature: 0.7
+  max_tokens: 2000
+
+### Gemini
+llm:
+  provider: gemini
+  model: gemini-pro
+  api_key: AIzaxxx
+  temperature: 0.7
+  max_tokens: 2000
+
+## 数据库配置
+database:
+  host: localhost
+  port: 3306
+  user: coze
+  password: coze123
+  database: opencoze
+  max_connections: 100
+  max_idle_connections: 10
+
+## 内容库配置
+content:
+  search_limit: 10
+  relevance_threshold: 0.7
+
+## 调试配置
+debug:
+  enable_mock_llm: false      # 是否使用 Mock LLM（测试用）
+  enable_mock_db: false        # 是否使用 Mock 数据库（测试用）
+  log_prompts: true            # 是否记录提示词
+  log_responses: true          # 是否记录 LLM 响应

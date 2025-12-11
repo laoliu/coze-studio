@@ -499,7 +499,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
-      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SERVER_ROOT_URL: http://localhost:8888
     volumes:
       - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
@@ -586,7 +586,7 @@ curl http://localhost:8000/health
 curl http://localhost:9090/-/healthy
 
 # 7. 访问Grafana
-# 浏览器打开: http://localhost:3000
+# 浏览器打开: http://localhost:8888
 # 默认用户名: admin
 # 密码: 在.env中设置的GRAFANA_ADMIN_PASSWORD
 ```
@@ -3778,7 +3778,7 @@ docker stats
 # 请求QPS: rate(http_requests_total[1m])
 
 # 访问Grafana
-http://localhost:3000
+http://localhost:8888
 ```
 
 ---

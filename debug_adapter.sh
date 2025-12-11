@@ -123,6 +123,88 @@ run_all() {
     print_success "所有演示完成！"
 }
 
+# 运行真实 LLM 和数据库演示
+run_real() {
+    print_header "运行真实 LLM & 数据库演示"
+    
+    # 检查必需的环境变量
+    if [ -z "$LLM_API_KEY" ]; then
+        print_warning "未设置 LLM_API_KEY 环境变量"
+        print_info "请先设置 API Key:"
+        echo "  export LLM_API_KEY=sk-xxx"
+        echo "  export LLM_PROVIDER=openai"
+        echo "  export LLM_MODEL=gpt-4"
+        echo ""
+        read -p "是否使用测试模式运行？(y/N): " confirm
+        
+        if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+            export DEBUG_ENABLE_MOCK_LLM=true
+            export DEBUG_ENABLE_MOCK_DB=true
+            print_info "启用测试模式 (Mock LLM + Mock DB)"
+        else
+            print_error "需要设置 LLM_API_KEY"
+            exit 1
+        fi
+    else
+        print_info "LLM Provider: ${LLM_PROVIDER:-openai}"
+        print_info "LLM Model: ${LLM_MODEL:-gpt-4}"
+    fi
+    
+    cd "$BACKEND_DIR"
+    
+    print_info "执行: go run ./cmd/adapter-demo -demo real"
+    echo ""
+    
+    go run ./cmd/adapter-demo -demo real
+    
+    echo ""
+    print_success "真实演示完成！"
+}
+
+# 运行 Coze 集成版演示
+run_coze() {
+    print_header "运行 Coze 集成版演示"
+    
+    # 检查 Coze Model ID
+    if [ -z "$COZE_MODEL_ID" ]; then
+        print_warning "未设置 COZE_MODEL_ID 环境变量"
+        print_info "请在 Coze Admin 中配置 Model，然后设置 Model ID:"
+        echo "  export COZE_MODEL_ID=12345"
+        echo ""
+        read -p "是否使用 Mock 模式运行？(y/N): " confirm
+        
+        if [ "$confirm" == "y" ] || [ "$confirm" == "Y" ]; then
+            export DEBUG_ENABLE_MOCK_DB=true
+            export COZE_MODEL_ID=1  # 假的 ID，会fallback到mock
+            print_info "启用测试模式 (Mock DB)"
+        else
+            print_error "需要设置 COZE_MODEL_ID"
+            echo ""
+            print_info "步骤："
+            echo "  1. 启动 Coze: make web"
+            echo "  2. 访问 Admin: http://localhost:3000/admin"
+            echo "  3. 配置 Model: Admin -> Models -> Add Model"
+            echo "  4. 获取 Model ID 并设置环境变量"
+            exit 1
+        fi
+    else
+        print_info "Coze Model ID: ${COZE_MODEL_ID}"
+        print_info "Database: ${DB_HOST:-localhost}:${DB_PORT:-3306}"
+    fi
+    
+    cd "$BACKEND_DIR"
+    
+    print_info "执行: go run ./cmd/adapter-demo -demo coze"
+    echo ""
+    
+    go run ./cmd/adapter-demo -demo coze
+    
+    echo ""
+    print_success "Coze 集成演示完成！"
+}
+
+
+
 # 运行测试
 run_tests() {
     print_header "运行单元测试"
@@ -326,12 +408,14 @@ Adapter Demo 调试助手
 用法: $0 [command]
 
 命令:
-  k12          运行 K12 适配器演示
+  k12          运行 K12 适配器演示 (Mock 数据)
+  real         运行真实 LLM & 数据库演示 (独立版)
+  coze         运行 Coze 集成版演示 (推荐用于生产)
   registry     运行适配器注册表演示
   all          运行所有演示
   test         运行单元测试
   bench        运行性能测试
-  debug        使用 Delve 调试器 [k12|registry|all]
+  debug        使用 Delve 调试器 [k12|real|coze|registry|all]
   build        构建可执行文件
   clean        清理构建产物
   stats        查看代码统计
@@ -340,25 +424,49 @@ Adapter Demo 调试助手
   help         显示此帮助信息
 
 示例:
-  # 运行 K12 演示
+  # Mock 演示
   $0 k12
+  
+  # 独立版真实 LLM（需要 API Key）
+  export LLM_API_KEY=sk-xxx
+  $0 real
+  
+  # Coze 集成版（推荐用于生产）
+  export COZE_MODEL_ID=12345
+  $0 coze
   
   # 运行测试
   $0 test
   
   # 使用 Delve 调试
-  $0 debug k12
+  $0 debug coze
   
   # VSCode 调试指南
   $0 vscode
-  
-  # 性能分析
-  $0 profile
+
+版本说明:
+  real  - 独立版：使用环境变量配置，适合 Demo/测试
+  coze  - Coze集成版：使用 Coze ModelBuilder，适合生产环境
 
 快速开始:
-  1. 运行演示:     $0 k12
-  2. 查看调试帮助: $0 vscode
-  3. 阅读文档:     docs/DEBUG_ADAPTER_DEMO.md
+  1. Mock 演示:     $0 k12
+  2. 独立版:        $0 real
+  3. Coze集成版:    $0 coze (推荐)
+  4. 查看文档:      docs/COZE_INTEGRATION_GUIDE.md
+
+环境变量:
+  # 独立版 (real)
+  LLM_API_KEY              LLM API Key
+  LLM_PROVIDER             openai|ark|claude|gemini
+  LLM_MODEL                gpt-4|doubao-pro-32k|...
+  
+  # Coze集成版 (coze) - 推荐
+  COZE_MODEL_ID            Coze 数据库中的 Model ID
+  
+  # 通用
+  DB_HOST                  数据库地址
+  DEBUG_ENABLE_MOCK_LLM    启用 Mock LLM
+  DEBUG_ENABLE_MOCK_DB     启用 Mock 数据库
 
 EOF
 }
@@ -378,6 +486,12 @@ main() {
     case "${1:-help}" in
         k12)
             run_k12
+            ;;
+        real)
+            run_real
+            ;;
+        coze)
+            run_coze
             ;;
         registry)
             run_registry

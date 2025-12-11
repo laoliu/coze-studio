@@ -297,7 +297,20 @@ func setParameterDefaultValues(ctx context.Context, dic map[string]any, paramSch
 			return nil, fmt.Errorf("the type of '%s' parameter '%s' cannot be 'object'", valueSchema.In, key)
 		}
 
-		if _, ok := dic[key]; !ok {
+		// 修复: 不仅检查参数是否存在，还检查值是否为 nil 或空字符串
+		// 这样可以确保 LLM 节点中 UI 配置的默认值能够被正确传递
+		val, ok := dic[key]
+		isNilOrEmpty := val == nil || (func() bool {
+			if valStr, isStr := val.(string); isStr {
+				return valStr == ""
+			}
+			return false
+		})()
+
+		// 如果参数不存在，或者值为 nil/空字符串，则设置默认值
+		if !ok || isNilOrEmpty {
+			logs.CtxDebugf(ctx, "[setParameterDefaultValues] setting default value for parameter %s (exists=%v, isNilOrEmpty=%v)", key, ok, isNilOrEmpty)
+
 			defaultVal, err := getDefaultValue(ctx, valueSchema.Schema.Value, projectInfo, userID)
 			if err != nil {
 				logs.CtxErrorf(ctx, "get default value failed, key=%s, err=%v", key, err)
@@ -305,10 +318,14 @@ func setParameterDefaultValues(ctx context.Context, dic map[string]any, paramSch
 			}
 
 			if valueSchema.Required && defaultVal == nil {
-				return nil, fmt.Errorf("the '%s' parameter '%s' is required", valueSchema.In, key)
+				return nil, fmt.Errorf("the %s parameter %s is required", valueSchema.In, key)
 			}
 
-			dic[key] = defaultVal
+			// 只在默认值不为 nil 时才设置
+			if defaultVal != nil {
+				dic[key] = defaultVal
+				logs.CtxDebugf(ctx, "[setParameterDefaultValues] set default value for %s: %v", key, defaultVal)
+			}
 		}
 	}
 

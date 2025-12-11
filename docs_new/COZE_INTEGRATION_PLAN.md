@@ -984,7 +984,7 @@ plugin:
   type: "api"
   
   api:
-    base_url: "http://localhost:3000"  # MCP Server地址
+    base_url: "http://localhost:8888"  # MCP Server地址
     
     endpoints:
       - method: "POST"

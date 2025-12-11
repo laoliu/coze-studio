@@ -13,8 +13,8 @@ RUN go mod download
 # Copy the entire backend source code
 COPY backend/ ./
 
-# Build the Go application
-RUN go build -ldflags="-s -w" -o /app/opencoze main.go
+# Build the Go application with -checklinkname=0 to fix sonic compatibility with Go 1.24
+RUN go build -ldflags="-s -w -checklinkname=0" -o /app/opencoze main.go
 
 
 # Stage 2: Final image
