@@ -1,0 +1,289 @@
+# 节点推荐规则配置
+# 用于基于规则的节点推荐引擎
+
+recommendation_rules:
+  # ==================== LLM 节点后的推荐 ====================
+  
+  # 规则 1：LLM 输出 JSON 后建议用 Code 节点解析
+  - name: llm_json_to_code
+    priority: high
+    condition:
+      source_node_type: LLM
+      output_format: json
+    recommendations:
+      - node_type: CodeRunner
+        score: 0.9
+        reason: "解析 LLM 返回的 JSON 数据，提取所需字段"
+        category: "数据处理"
+      - node_type: If
+        score: 0.7
+        reason: "根据 LLM 返回的结果进行条件判断"
+        category: "流程控制"
+
+  # 规则 2：LLM 节点后建议使用知识库或数据库
+  - name: llm_to_storage
+    priority: medium
+    condition:
+      source_node_type: LLM
+      workflow_has_database: true
+    recommendations:
+      - node_type: Database
+        score: 0.75
+        reason: "将 LLM 生成的内容保存到数据库"
+        category: "数据存储"
+      - node_type: Dataset
+        score: 0.7
+        reason: "将生成的内容写入知识库，用于后续检索"
+        category: "数据存储"
+
+  # 规则 3：LLM 后可能需要再次调用 LLM（多轮对话）
+  - name: llm_to_llm
+    priority: medium
+    condition:
+      source_node_type: LLM
+      is_chat_workflow: true
+    recommendations:
+      - node_type: LLM
+        score: 0.65
+        reason: "基于上一轮结果进行深度处理或优化"
+        category: "AI 处理"
+
+  # ==================== Code 节点后的推荐 ====================
+  
+  # 规则 4：Code 节点输出数组后建议用 Loop
+  - name: code_array_to_loop
+    priority: high
+    condition:
+      source_node_type: CodeRunner
+      output_has_array: true
+    recommendations:
+      - node_type: Loop
+        score: 0.95
+        reason: "遍历数组中的每个元素进行批量处理"
+        category: "流程控制"
+      - node_type: CodeRunner
+        score: 0.6
+        reason: "对数组数据进行进一步处理或转换"
+        category: "数据处理"
+
+  # 规则 5：Code 节点后建议用条件判断
+  - name: code_to_condition
+    priority: medium
+    condition:
+      source_node_type: CodeRunner
+    recommendations:
+      - node_type: If
+        score: 0.7
+        reason: "根据代码处理结果进行条件分支"
+        category: "流程控制"
+      - node_type: LLM
+        score: 0.65
+        reason: "使用 LLM 对处理后的数据进行分析或生成"
+        category: "AI 处理"
+
+  # ==================== 知识库/数据库检索后的推荐 ====================
+  
+  # 规则 6：检索后建议用 LLM 生成
+  - name: retrieval_to_generation
+    priority: high
+    condition:
+      source_node_types:
+        - Dataset
+        - Database
+      operation_type: query
+    recommendations:
+      - node_type: LLM
+        score: 0.9
+        reason: "基于检索到的知识生成回答或内容"
+        category: "AI 处理"
+      - node_type: CodeRunner
+        score: 0.7
+        reason: "对检索结果进行格式化或过滤"
+        category: "数据处理"
+
+  # 规则 7：数据库查询后可能需要更新
+  - name: database_query_to_update
+    priority: medium
+    condition:
+      source_node_type: Database
+      operation_type: query
+    recommendations:
+      - node_type: Database
+        score: 0.6
+        reason: "根据查询结果更新数据库记录"
+        category: "数据存储"
+      - node_type: If
+        score: 0.65
+        reason: "根据查询结果判断后续操作"
+        category: "流程控制"
+
+  # ==================== Plugin/API 节点后的推荐 ====================
+  
+  # 规则 8：API 调用后处理响应数据
+  - name: api_to_processing
+    priority: high
+    condition:
+      source_node_type: Plugin
+    recommendations:
+      - node_type: CodeRunner
+        score: 0.85
+        reason: "解析 API 返回数据，提取所需字段"
+        category: "数据处理"
+      - node_type: If
+        score: 0.75
+        reason: "根据 API 调用结果进行条件判断"
+        category: "流程控制"
+      - node_type: LLM
+        score: 0.7
+        reason: "使用 LLM 分析或总结 API 返回的数据"
+        category: "AI 处理"
+
+  # ==================== 条件判断节点后的推荐 ====================
+  
+  # 规则 9：If 节点的分支后建议结束或合并
+  - name: if_branch_to_end
+    priority: medium
+    condition:
+      source_node_type: If
+      is_branch_end: true
+    recommendations:
+      - node_type: End
+        score: 0.8
+        reason: "此分支已完成，可以结束工作流"
+        category: "流程控制"
+      - node_type: Variable
+        score: 0.65
+        reason: "设置变量值，供后续节点使用"
+        category: "数据处理"
+
+  # ==================== Loop 循环节点后的推荐 ====================
+  
+  # 规则 10：Loop 内部节点推荐
+  - name: loop_internal_processing
+    priority: high
+    condition:
+      inside_loop: true
+    recommendations:
+      - node_type: LLM
+        score: 0.8
+        reason: "对循环中的每个元素进行 AI 处理"
+        category: "AI 处理"
+      - node_type: CodeRunner
+        score: 0.85
+        reason: "对循环中的每个元素进行数据处理"
+        category: "数据处理"
+      - node_type: Plugin
+        score: 0.75
+        reason: "为每个元素调用外部 API"
+        category: "外部服务"
+      - node_type: Break
+        score: 0.6
+        reason: "满足条件时跳出循环"
+        category: "流程控制"
+
+  # 规则 11：Loop 循环后建议聚合结果
+  - name: loop_to_aggregation
+    priority: high
+    condition:
+      source_node_type: Loop
+    recommendations:
+      - node_type: CodeRunner
+        score: 0.9
+        reason: "聚合循环处理的结果，进行汇总分析"
+        category: "数据处理"
+      - node_type: Variable
+        score: 0.75
+        reason: "将循环结果存储为变量"
+        category: "数据处理"
+      - node_type: End
+        score: 0.7
+        reason: "循环完成，结束工作流"
+        category: "流程控制"
+
+  # ==================== 开始节点后的推荐 ====================
+  
+  # 规则 12：工作流开始节点后的常见选择
+  - name: start_node_recommendations
+    priority: high
+    condition:
+      source_node_type: Entry
+    recommendations:
+      - node_type: LLM
+        score: 0.85
+        reason: "使用 LLM 进行初始内容生成或分析"
+        category: "AI 处理"
+      - node_type: Dataset
+        score: 0.8
+        reason: "从知识库检索相关信息"
+        category: "数据检索"
+      - node_type: CodeRunner
+        score: 0.75
+        reason: "对输入数据进行预处理或验证"
+        category: "数据处理"
+      - node_type: If
+        score: 0.7
+        reason: "根据输入条件选择不同的处理路径"
+        category: "流程控制"
+      - node_type: Plugin
+        score: 0.65
+        reason: "调用外部 API 获取数据"
+        category: "外部服务"
+
+  # ==================== 特殊场景推荐 ====================
+  
+  # 规则 13：子工作流调用
+  - name: complex_task_to_subworkflow
+    priority: medium
+    condition:
+      workflow_complexity: high
+      has_repeated_pattern: true
+    recommendations:
+      - node_type: SubWorkflow
+        score: 0.85
+        reason: "复杂或重复的任务建议封装为子工作流"
+        category: "流程组织"
+
+  # 规则 14：批处理场景
+  - name: batch_processing
+    priority: high
+    condition:
+      has_large_dataset: true
+      source_output_is_array: true
+    recommendations:
+      - node_type: Batch
+        score: 0.9
+        reason: "大批量数据建议使用批处理节点提升效率"
+        category: "性能优化"
+
+  # 规则 15：意图识别场景
+  - name: intent_classification
+    priority: medium
+    condition:
+      source_node_type: Entry
+      is_chat_workflow: true
+    recommendations:
+      - node_type: Intent
+        score: 0.8
+        reason: "识别用户意图，实现智能路由"
+        category: "AI 处理"
+
+  # ==================== 通用兜底推荐 ====================
+  
+  # 规则 16：通用推荐（当没有特定规则匹配时）
+  - name: generic_recommendations
+    priority: low
+    condition:
+      always_match: true
+    recommendations:
+      - node_type: End
+        score: 0.5
+        reason: "工作流已完成，可以结束并返回结果"
+        category: "流程控制"
+      - node_type: CodeRunner
+        score: 0.45
+        reason: "使用代码节点进行自定义数据处理"
+        category: "数据处理"
+      - node_type: LLM
+        score: 0.4
+        reason: "使用大模型进行智能处理"
+        category: "AI 处理"

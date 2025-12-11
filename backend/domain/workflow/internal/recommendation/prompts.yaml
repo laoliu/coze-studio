@@ -1,0 +1,218 @@
+# LLM Prompt 模板配置
+# 用于 LLM 驱动的智能节点推荐
+
+# 系统提示词 - 定义 LLM 的角色和行为
+system_prompt: |
+  你是一个专业的工作流设计助手，擅长分析用户的工作流需求并推荐最合适的节点。
+  
+  ## 你的职责
+  1. **深度理解**：分析用户当前工作流的目标、已有节点和数据流向
+  2. **智能推荐**：基于上下文推荐 3-5 个最合适的后续节点
+  3. **清晰解释**：为每个推荐提供简洁但有说服力的理由
+  4. **实用导向**：优先推荐常见、成熟、易用的节点组合
+  
+  ## 推荐原则
+  - **目标导向**：推荐应帮助用户更好地实现工作流目标
+  - **数据兼容**：推荐的节点必须能处理上游节点的输出数据类型
+  - **最佳实践**：遵循常见的工作流设计模式
+  - **简洁高效**：避免推荐冗余或不必要的节点
+  
+  ## 输出格式要求
+  - 必须返回有效的 JSON 格式
+  - 推荐数量：3-5 个
+  - 每个推荐包含：node_type（节点类型）、reason（推荐理由）、score（0-1 之间的得分）
+  - 按 score 降序排列
+  - 不要包含任何 JSON 之外的文本或解释
+
+# 用户提示词模板 - 提供工作流上下文信息
+user_prompt_template: |
+  ## 工作流信息
+  
+  ### 工作流目标
+  {{workflow_objective}}
+  
+  ### 当前工作流结构
+  已有节点（按执行顺序）：
+  {{existing_nodes}}
+  
+  ### 当前节点详情
+  **节点类型**: {{source_node_type}}
+  **节点名称**: {{source_node_name}}
+  **节点输出**:
+  {{source_node_outputs}}
+  
+  {{#if workflow_context}}
+  ### 工作流上下文
+  - 是否包含数据库节点: {{has_database}}
+  - 是否包含知识库节点: {{has_knowledge}}
+  - 是否在循环内部: {{inside_loop}}
+  - 工作流复杂度: {{workflow_complexity}}
+  {{/if}}
+  
+  ## 可用节点类型
+  
+  以下是你可以推荐的节点类型及其用途：
+  
+  ### AI 处理类
+  - **LLM**: 调用大语言模型，用于内容生成、分析、对话等
+  - **Intent**: 意图识别，用于智能路由和分类
+  
+  ### 数据处理类
+  - **Code**: 执行 Python 代码，处理数据、转换格式等
+  - **Variable**: 设置或获取变量值
+  
+  ### 数据存储与检索类
+  - **Database**: 数据库操作（查询、插入、更新、删除）
+  - **Dataset**: 知识库操作（检索、写入、删除）
+  
+  ### 外部服务类
+  - **Plugin**: 调用外部 API 或插件
+  
+  ### 流程控制类
+  - **If**: 条件判断，根据条件选择不同分支
+  - **Loop**: 循环处理，遍历数组或列表
+  - **Break**: 跳出循环
+  - **End**: 结束工作流，返回结果
+  
+  ### 高级功能类
+  - **SubWorkflow**: 调用子工作流，封装复杂逻辑
+  - **Batch**: 批处理节点，提升大批量数据处理效率
+  
+  ## 任务
+  请根据以上信息，推荐 3-5 个最适合接在当前节点后面的节点类型。
+  
+  ## 输出格式（必须严格遵守）
+  ```json
+  {
+    "recommendations": [
+      {
+        "node_type": "节点类型（必须从上面的可用节点类型中选择）",
+        "reason": "推荐理由（1-2 句话，简洁明了）",
+        "score": 0.95,
+        "suggested_config": {
+          "可选的配置建议": "帮助用户快速配置节点"
+        }
+      }
+    ]
+  }
+  ```
+
+# 简化版提示词 - 用于快速推荐场景
+simple_prompt_template: |
+  当前节点类型：{{source_node_type}}
+  节点输出：{{source_outputs_summary}}
+  
+  请推荐 3 个最合适的后续节点，返回 JSON 格式：
+  ```json
+  {
+    "recommendations": [
+      {"node_type": "节点类型", "reason": "推荐理由", "score": 0.9}
+    ]
+  }
+  ```
+
+# 特定场景的专用提示词
+
+# 场景 1：LLM 节点后的推荐
+llm_node_prompt: |
+  当前节点是 LLM 大模型节点，已生成以下输出：
+  {{llm_output}}
+  
+  输出格式：{{output_format}}
+  
+  请推荐合适的后续节点来处理这个 LLM 输出。考虑：
+  1. 如果是 JSON 格式，可能需要 Code 节点解析
+  2. 如果是文本内容，可能需要存储到数据库或知识库
+  3. 如果需要进一步处理，可能需要再次调用 LLM
+  
+  返回 JSON 格式推荐。
+
+# 场景 2：数据检索后的推荐
+retrieval_prompt: |
+  当前节点从{{source_type}}检索到了以下数据：
+  {{retrieved_data}}
+  
+  请推荐如何处理这些检索结果。通常的选择包括：
+  1. 使用 LLM 基于检索结果生成回答
+  2. 使用 Code 节点过滤或格式化数据
+  3. 根据检索结果进行条件判断
+  
+  返回 JSON 格式推荐。
+
+# 场景 3：循环处理场景
+loop_prompt: |
+  当前工作流需要处理一个包含 {{item_count}} 个元素的数组。
+  数组元素类型：{{item_type}}
+  
+  请推荐循环内应该使用什么节点来处理每个元素。考虑：
+  1. 对每个元素调用 LLM 进行处理
+  2. 使用 Code 节点批量转换
+  3. 调用 API 获取额外信息
+  4. 在满足条件时使用 Break 跳出循环
+  
+  返回 JSON 格式推荐。
+
+# 场景 4：工作流开始节点
+start_node_prompt: |
+  这是一个新的工作流，用户的需求是：
+  {{user_requirement}}
+  
+  输入参数：
+  {{input_parameters}}
+  
+  请推荐第一个应该添加的节点。考虑：
+  1. 如果需要内容生成，推荐 LLM
+  2. 如果需要检索知识，推荐 Dataset
+  3. 如果需要数据预处理，推荐 Code
+  4. 如果需要调用外部服务，推荐 Plugin
+  
+  返回 JSON 格式推荐。
+
+# 输出 Schema 定义（用于结构化输出）
+output_schema:
+  type: object
+  required:
+    - recommendations
+  properties:
+    recommendations:
+      type: array
+      minItems: 3
+      maxItems: 5
+      items:
+        type: object
+        required:
+          - node_type
+          - reason
+          - score
+        properties:
+          node_type:
+            type: string
+            description: "节点类型，必须是有效的 NodeType"
+            enum:
+              - LLM
+              - Code
+              - Plugin
+              - Database
+              - Dataset
+              - If
+              - Loop
+              - Break
+              - End
+              - Variable
+              - SubWorkflow
+              - Batch
+              - Intent
+          reason:
+            type: string
+            description: "推荐理由，1-2 句话"
+            minLength: 10
+            maxLength: 200
+          score:
+            type: number
+            description: "推荐得分"
+            minimum: 0
+            maximum: 1
+          suggested_config:
+            type: object
+            description: "可选的节点配置建议"
+            additionalProperties: true
