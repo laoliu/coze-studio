@@ -45,6 +45,7 @@ import {
 import { NodeFormPanel, type NodeFormPanelProps } from '../node-side-sheet';
 import { RoleConfigPanel } from '../flow-role';
 import { FloatLayout, type FloatLayoutProps } from '../float-layout';
+import { NodeRecommendationPanel } from '../NodeRecommendationPanel';
 
 const useCloseNodeFormWhenBlur = () => {
   const selectService = useService(WorkflowSelectService);
@@ -116,6 +117,9 @@ export const WorkflowFloatLayout: React.FC<
         <ChatFlowTestFormPanel {...p} />
       ),
       [LayoutPanelKey.RoleConfig]: () => <RoleConfigPanel />,
+      [LayoutPanelKey.NodeRecommendation]: (p: any) => (
+        <NodeRecommendationPanel {...p} />
+      ),
       traceDetail: (p: TraceDetailPanelProps) => <TraceDetailPanel {...p} />,
     }),
     [components],

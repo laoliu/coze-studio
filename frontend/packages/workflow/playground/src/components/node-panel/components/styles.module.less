@@ -16,6 +16,16 @@
     }
   }
 
+  .recommendation-wrapper {
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--coz-stroke-primary);
+    
+    // 当推荐区域显示时，与下方列表有分隔
+    & + .node-list {
+      padding-top: 8px;
+    }
+  }
+
   .node-list {
     overflow: hidden;
     height: calc(100% - 56px);

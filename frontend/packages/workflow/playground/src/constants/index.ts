@@ -41,6 +41,8 @@ export enum LayoutPanelKey {
   TraceDetail = 'trace-detail',
   /** role configuration */
   RoleConfig = 'role-config',
+  /** Node recommendation panel */
+  NodeRecommendation = 'node-recommendation',
 }
 
 /**

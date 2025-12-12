@@ -16,12 +16,13 @@
 
 import {
   forwardRef,
-  type MouseEvent,
+  type MouseEvent as MouseEventType,
   type RefObject,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
+  useCallback,
 } from 'react';
 
 import { throttle } from 'lodash-es';
@@ -36,11 +37,16 @@ import {
 import { I18n } from '@coze-arch/i18n';
 import { IconCozEmpty, IconCozMagnifier } from '@coze-arch/coze-design/icons';
 import { EmptyState, Input } from '@coze-arch/coze-design';
-import { type WorkflowNodeEntity } from '@flowgram-adapter/free-layout-editor';
+import {
+  type WorkflowNodeEntity,
+  useService,
+} from '@flowgram-adapter/free-layout-editor';
 
 import { type UnionNodeTemplate } from '@/typing';
+import { WorkflowPlaygroundContext } from '@/workflow-playground-context';
 
 import { NodePanelContextProvider } from '../hooks/node-panel-context';
+import { RecommendationSection } from './recommendation-section';
 import { useSearchNode, useTemplateNodeList } from '../hooks';
 import { PANEL_WIDTH, THROTTLE_INTERVAL } from '../constant';
 import { SearchResultNodeList } from './search-result-node-list';
@@ -54,7 +60,7 @@ import styles from './styles.module.less';
 export type NodeListRefType = FavoritePluginNodeListRefType;
 interface NodesContainerProps {
   onSelect: (props: {
-    event: MouseEvent<HTMLElement>;
+    event: MouseEventType<HTMLElement>;
     nodeTemplate: UnionNodeTemplate;
   }) => void;
   enableDrag?: boolean;
@@ -76,10 +82,24 @@ export const NodeList = forwardRef<NodeListRefType, NodesContainerProps>(
       adaptiveHeight,
       onAddingNode,
     } = props;
+    
+    // 获取工作流上下文（用于推荐）
+    const context = useService<WorkflowPlaygroundContext>(
+      WorkflowPlaygroundContext,
+    );
+    
     const nodeCategoryList = useTemplateNodeList(containerNode);
     const nodeListRef = useRef<HTMLDivElement>();
     const [showBorder, setShowBorder] = useState(false);
     const [input, setInput] = useState('');
+    
+    // 推荐相关状态
+    const [showRecommendation, setShowRecommendation] = useState(false);
+    const [sourceNodeInfo, setSourceNodeInfo] = useState<{
+      nodeId?: string;
+      nodeType?: string;
+      nodeName?: string;
+    }>({});
 
     const {
       showSearchResult,
@@ -123,6 +143,42 @@ export const NodeList = forwardRef<NodeListRefType, NodesContainerProps>(
       handleKeywordChange(text);
     }, [input]);
 
+    // 处理推荐节点选择
+    const handleSelectRecommendation = useCallback(
+      async (nodeType: string) => {
+        setShowRecommendation(false);
+        
+        // 创建一个 mock 事件
+        const mockEvent = {
+          type: 'click',
+          currentTarget: null,
+          target: null,
+        } as any;
+        
+        await onSelect({
+          event: mockEvent,
+          nodeTemplate: {
+            type: nodeType,
+          } as UnionNodeTemplate,
+        });
+      },
+      [onSelect]
+    );
+
+    // 当 containerNode 变化时，更新推荐源节点
+    useEffect(() => {
+      if (containerNode) {
+        setSourceNodeInfo({
+          nodeId: containerNode.id,
+          nodeType: containerNode.type,
+          nodeName: containerNode.data?.nodeMeta?.title,
+        });
+        setShowRecommendation(true);
+      } else {
+        setShowRecommendation(false);
+      }
+    }, [containerNode]);
+
     return (
       <div
         className={styles['node-panel']}
@@ -155,6 +211,20 @@ export const NodeList = forwardRef<NodeListRefType, NodesContainerProps>(
             prefix={<IconCozMagnifier style={{ fontSize: '16px' }} />}
           />
         </div>
+        {/* 推荐区域 */}
+        {!showSearchResult && showRecommendation && sourceNodeInfo.nodeId && (
+          <div className={styles['recommendation-wrapper']}>
+            <RecommendationSection
+              sourceNodeId={sourceNodeInfo.nodeId}
+              sourceNodeType={sourceNodeInfo.nodeType || ''}
+              sourceNodeName={sourceNodeInfo.nodeName}
+              workflowId={context.workflowEntity?.id || ''}
+              onSelectNode={handleSelectRecommendation}
+              maxDisplay={3}
+              enabled={true}
+            />
+          </div>
+        )}
         {noSearchResult ? (
           <EmptyState
             className="mx-auto mt-[128px] max-w-[270px]"

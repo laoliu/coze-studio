@@ -27,6 +27,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 
+	cozeHandler "github.com/coze-dev/coze-studio/backend/api/handler/coze"
 	coze "github.com/coze-dev/coze-studio/backend/api/router/coze"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
@@ -35,6 +36,10 @@ import (
 func GeneratedRegister(r *server.Hertz) {
 	// INSERT_POINT: DO NOT DELETE THIS LINE!
 	coze.Register(r)
+
+	// 注册自定义路由 - 节点推荐系统
+	registerRecommendationRoutes(r)
+
 	staticFileRegister(r)
 }
 
@@ -86,4 +91,15 @@ func staticFileRegister(r *server.Hertz) {
 		ctx.File(staticFile)
 	})
 
+}
+
+// registerRecommendationRoutes 注册节点推荐路由
+func registerRecommendationRoutes(r *server.Hertz) {
+	api := r.Group("/api/workflow_api/node")
+	{
+		api.POST("/recommend", cozeHandler.GetNodeRecommendations)
+		api.POST("/recommend/feedback", cozeHandler.RecordNodeFeedback)
+	}
+
+	logs.Infof("Node recommendation routes registered")
 }

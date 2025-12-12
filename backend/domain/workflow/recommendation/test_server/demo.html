@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>节点推荐系统 - 前端演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+                'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+        }
+        
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .workflow-simulator {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .canvas-area {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .node-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .node-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .node-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .node-item h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .node-item .node-type {
+            font-size: 12px;
+            color: #666;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .recommendation-panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .recommendation-panel h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .recommendation-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .recommendation-item:hover {
+            background: #e7f3ff;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+        
+        .recommendation-item .title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .recommendation-item .score {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .recommendation-item .reason {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .recommendation-item .category {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        .error {
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #2f855a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .metadata {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .metadata div {
+            margin-bottom: 5px;
+        }
+        
+        .metadata strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 节点推荐系统</h1>
+            <p>智能工作流节点推荐 - 前端集成演示</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 统计信息 -->
+            <div class="demo-section">
+                <h2>📊 系统状态</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="value" id="totalRules">16</div>
+                        <div class="label">推荐规则</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="apiStatus">✓</div>
+                        <div class="label">API 状态</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="requestCount">0</div>
+                        <div class="label">请求次数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 工作流模拟器 -->
+            <div class="demo-section">
+                <h2>🎨 工作流编辑器模拟</h2>
+                <p style="color: #666; margin-bottom: 10px;">点击左侧节点，右侧会显示智能推荐的下一个节点</p>
+                
+                <div class="workflow-simulator">
+                    <!-- 画布区域 -->
+                    <div class="canvas-area">
+                        <h3 style="margin-bottom: 15px; color: #666;">当前工作流节点</h3>
+                        <div id="nodeList">
+                            <div class="node-item" data-node-type="Start" data-workflow-id="wf_001">
+                                <h3>开始节点</h3>
+                                <span class="node-type">Start</span>
+                            </div>
+                            <div class="node-item" data-node-type="LLM" data-workflow-id="wf_001">
+                                <h3>大语言模型</h3>
+                                <span class="node-type">LLM</span>
+                            </div>
+                            <div class="node-item" data-node-type="Code" data-workflow-id="wf_001">
+                                <h3>代码执行</h3>
+                                <span class="node-type">Code</span>
+                            </div>
+                            <div class="node-item" data-node-type="Database" data-workflow-id="wf_001">
+                                <h3>数据库查询</h3>
+                                <span class="node-type">Database</span>
+                            </div>
+                            <div class="node-item" data-node-type="IfElse" data-workflow-id="wf_001">
+                                <h3>条件判断</h3>
+                                <span class="node-type">IfElse</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐面板 -->
+                    <div class="recommendation-panel">
+                        <h3>💡 推荐的下一个节点</h3>
+                        <div id="recommendationContent">
+                            <p style="color: #999; text-align: center; padding: 40px 20px;">
+                                👈 请先点击左侧节点
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 控制按钮 -->
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="testRecommendation()">
+                        🧪 测试推荐 API
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSelection()">
+                        🔄 清除选择
+                    </button>
+                    <button class="btn btn-secondary" onclick="checkServerStatus()">
+                        🔍 检查服务器
+                    </button>
+                </div>
+                
+                <div id="messageArea"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let requestCount = 0;
+        let selectedNode = null;
+        let currentRecommendations = [];
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            checkServerStatus();
+            initializeNodeSelection();
+        });
+        
+        // 初始化节点选择
+        function initializeNodeSelection() {
+            const nodeItems = document.querySelectorAll('.node-item');
+            nodeItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    // 清除之前的选中状态
+                    nodeItems.forEach(n => n.classList.remove('selected'));
+                    // 设置当前选中
+                    item.classList.add('selected');
+                    
+                    selectedNode = {
+                        type: item.dataset.nodeType,
+                        workflowId: item.dataset.workflowId,
+                        name: item.querySelector('h3').textContent
+                    };
+                    
+                    // 获取推荐
+                    getRecommendations(selectedNode);
+                });
+            });
+        }
+        
+        // 获取推荐
+        async function getRecommendations(node) {
+            const content = document.getElementById('recommendationContent');
+            content.innerHTML = '<div class="loading">正在获取推荐</div>';
+            
+            try {
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        workflow_id: node.workflowId,
+                        current_node: {
+                            type: node.type,
+                            output_types: ['string', 'object']
+                        },
+                        context: {
+                            total_nodes: 5,
+                            has_llm: true,
+                            has_database: node.type === 'Database'
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                requestCount++;
+                document.getElementById('requestCount').textContent = requestCount;
+                
+                if (data.success && data.recommendations) {
+                    currentRecommendations = data.recommendations;
+                    displayRecommendations(data.recommendations, data.metadata || {});
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+            } catch (error) {
+                console.error('推荐请求失败:', error);
+                content.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 获取推荐失败</strong><br>
+                        ${error.message}<br>
+                        <small>请确保后端服务器正在运行 (localhost:8080)</small>
+                    </div>
+                `;
+            }
+        }
+        
+        // 显示推荐结果
+        function displayRecommendations(recommendations, metadata) {
+            const content = document.getElementById('recommendationContent');
+            
+            if (!recommendations || recommendations.length === 0) {
+                content.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无推荐</p>';
+                return;
+            }
+            
+            let html = '';
+            recommendations.forEach((rec, index) => {
+                html += `
+                    <div class="recommendation-item" onclick="selectRecommendation(${index})">
+                        <div class="title">
+                            <span>${rec.display_name || rec.type}</span>
+                            <span class="score">${(rec.score * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="reason">${rec.reason}</div>
+                        <div class="category">📁 ${rec.category || '未分类'}</div>
+                    </div>
+                `;
+            });
+            
+            // 添加元数据
+            html += `
+                <div class="metadata">
+                    <div><strong>请求ID:</strong> ${metadata.request_id || 'N/A'}</div>
+                    <div><strong>候选数量:</strong> ${metadata.total_candidates || recommendations.length}</div>
+                    <div><strong>响应时间:</strong> ${metadata.processing_time_ms ? metadata.processing_time_ms + 'ms' : 'N/A'}</div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        // 选择推荐
+        function selectRecommendation(index) {
+            const rec = currentRecommendations[index];
+            showMessage(`✅ 已选择: ${rec.display_name || rec.type}`, 'success');
+            
+            // 发送反馈
+            sendFeedback(rec.type, 'accepted');
+        }
+        
+        // 发送反馈
+        async function sendFeedback(nodeType, action) {
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        workflow_id: selectedNode.workflowId,
+                        recommended_node_type: nodeType,
+                        action: action,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('反馈发送成功');
+                }
+            } catch (error) {
+                console.error('反馈发送失败:', error);
+            }
+        }
+        
+        // 测试推荐 API
+        async function testRecommendation() {
+            if (!selectedNode) {
+                showMessage('⚠️ 请先选择一个节点', 'error');
+                return;
+            }
+            
+            getRecommendations(selectedNode);
+        }
+        
+        // 清除选择
+        function clearSelection() {
+            document.querySelectorAll('.node-item').forEach(n => n.classList.remove('selected'));
+            selectedNode = null;
+            currentRecommendations = [];
+            document.getElementById('recommendationContent').innerHTML = `
+                <p style="color: #999; text-align: center; padding: 40px 20px;">
+                    👈 请先点击左侧节点
+                </p>
+            `;
+            document.getElementById('messageArea').innerHTML = '';
+        }
+        
+        // 检查服务器状态
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    document.getElementById('apiStatus').textContent = '✓';
+                    showMessage(`✅ 服务器运行正常 (${data.service} v${data.version})`, 'success');
+                } else {
+                    throw new Error('Server unhealthy');
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '✗';
+                showMessage('❌ 无法连接到服务器 (localhost:8080)', 'error');
+            }
+        }
+        
+        // 显示消息
+        function showMessage(message, type) {
+            const area = document.getElementById('messageArea');
+            area.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                area.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

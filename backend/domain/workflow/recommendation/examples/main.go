@@ -22,7 +22,8 @@ import (
 	"log"
 
 	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity"
-	"github.com/coze-dev/coze-studio/backend/domain/workflow/internal/recommendation"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/entity/vo"
+	"github.com/coze-dev/coze-studio/backend/domain/workflow/recommendation"
 )
 
 // 示例 1: 基础推荐
@@ -88,14 +89,14 @@ func example2_ArrayOutputRecommendation() {
 		SourceNodeID:   "code-node-1",
 		SourceNodeType: entity.NodeTypeCodeRunner,
 		SourceNodeName: "数据解析器",
-		SourceOutputs: map[string]*entity.TypeInfo{
+		SourceOutputs: map[string]*vo.TypeInfo{
 			"items": {
-				Type:        entity.TypeArray,
-				Description: "解析后的数据项列表",
+				Type: vo.DataTypeArray,
+				Desc: "解析后的数据项列表",
 			},
 			"count": {
-				Type:        entity.TypeNumber,
-				Description: "数据项数量",
+				Type: vo.DataTypeNumber,
+				Desc: "数据项数量",
 			},
 		},
 		WorkflowContext: &recommendation.WorkflowContext{

@@ -54,7 +54,8 @@ func (e *RuleEngine) loadRules() error {
 	// 获取规则文件路径（支持多种路径）
 	possiblePaths := []string{
 		"rules.yaml", // 当前目录（测试时）
-		filepath.Join("backend", "domain", "workflow", "internal", "recommendation", "rules.yaml"), // 从项目根目录
+		filepath.Join("backend", "domain", "workflow", "recommendation", "rules.yaml"), // 从项目根目录
+		filepath.Join("..", "rules.yaml"),                                              // 从 examples 子目录
 	}
 
 	var data []byte

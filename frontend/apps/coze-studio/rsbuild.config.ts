@@ -23,10 +23,23 @@ const API_PROXY_TARGET = `http://localhost:${
   process.env.WEB_SERVER_PORT || 8888
 }/`;
 
+// 推荐服务代理目标（开发环境）
+const RECOMMENDATION_SERVICE_TARGET = process.env.RECOMMENDATION_SERVICE_URL || 'http://localhost:8080';
+
 const mergedConfig = defineConfig({
   server: {
     strictPort: true,
     proxy: [
+      // 推荐服务 API 代理（优先级最高，放在最前面）
+      {
+        context: ['/api/recommend', '/api/feedback'],
+        target: RECOMMENDATION_SERVICE_TARGET,
+        secure: false,
+        changeOrigin: true,
+        onProxyReq: (proxyReq, req, res) => {
+          console.log('[Recommendation Proxy]', req.method, req.url, '→', RECOMMENDATION_SERVICE_TARGET);
+        },
+      },
       {
         context: ['/api'],
         target: API_PROXY_TARGET,

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>useNodeRecommendation Hook 手动测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #4CAF50;
+      border-radius: 4px;
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .recommendation-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 10px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .recommendation-card:hover {
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .score {
+      display: inline-block;
+      background: #4CAF50;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .loading {
+      color: #ff9800;
+      font-weight: bold;
+    }
+    .error {
+      color: #f44336;
+      padding: 10px;
+      background: #ffebee;
+      border-left: 4px solid #f44336;
+      margin: 10px 0;
+    }
+    .success {
+      color: #4CAF50;
+      padding: 10px;
+      background: #e8f5e9;
+      border-left: 4px solid #4CAF50;
+      margin: 10px 0;
+    }
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    pre {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .action-buttons button {
+      flex: 1;
+      background: #2196F3;
+    }
+    .action-buttons button:hover {
+      background: #1976D2;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 useNodeRecommendation Hook 手动测试</h1>
+    
+    <div class="info-box">
+      <strong>📝 测试说明：</strong>
+      <p>此页面用于手动测试 useNodeRecommendation Hook 的各项功能。请确保后端测试服务器正在运行（端口 8080）。</p>
+      <p><strong>启动测试服务器：</strong> <code>cd backend/domain/workflow/recommendation/test_server && go run main.go</code></p>
+    </div>
+
+    <!-- 测试 1: 基础推荐加载 -->
+    <div class="test-section">
+      <h2>测试 1: 基础推荐加载</h2>
+      <p>测试从 CodeNode 加载推荐节点（应该推荐 Loop、Batch 等）</p>
+      <button onclick="testBasicRecommendation()">🚀 加载推荐</button>
+      <div id="test1-results" class="results"></div>
+    </div>
+
+    <!-- 测试 2: 不同节点类型 -->
+    <div class="test-section">
+      <h2>测试 2: 不同节点类型推荐</h2>
+      <div>
+        <button onclick="testNodeType('StartNode')">Start 节点</button>
+        <button onclick="testNodeType('CodeNode')">Code 节点</button>
+        <button onclick="testNodeType('LLMNode')">LLM 节点</button>
+        <button onclick="testNodeType('EndNode')">End 节点</button>
+      </div>
+      <div id="test2-results" class="results"></div>
+    </div>
+
+    <!-- 测试 3: 推荐反馈 -->
+    <div class="test-section">
+      <h2>测试 3: 推荐反馈</h2>
+      <p>先加载推荐，然后提交不同类型的反馈</p>
+      <button onclick="loadRecommendationsForFeedback()">1. 加载推荐</button>
+      <div id="feedback-buttons" style="margin-top: 10px;"></div>
+      <div id="test3-results" class="results"></div>
+    </div>
+
+    <!-- 测试 4: 错误处理 -->
+    <div class="test-section">
+      <h2>测试 4: 错误处理</h2>
+      <p>测试无效请求和错误场景</p>
+      <button onclick="testInvalidRequest()">测试无效请求</button>
+      <button onclick="testWithoutRequestId()">无 RequestID 提交反馈</button>
+      <div id="test4-results" class="results"></div>
+    </div>
+
+    <!-- 测试 5: 重载功能 -->
+    <div class="test-section">
+      <h2>测试 5: 重载功能</h2>
+      <p>测试使用相同参数重新加载推荐</p>
+      <button onclick="testReload()">加载 → 清空 → 重载</button>
+      <div id="test5-results" class="results"></div>
+    </div>
+
+    <!-- 服务器状态 -->
+    <div class="test-section">
+      <h2>服务器状态</h2>
+      <button onclick="checkServerHealth()">🏥 检查服务器健康状态</button>
+      <div id="server-status" class="results"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080';
+    let currentRequestId = '';
+    let lastRecommendations = [];
+
+    // 模拟 Hook 的状态管理
+    const hookState = {
+      recommendations: [],
+      loading: false,
+      error: null,
+      requestId: '',
+      lastParams: null
+    };
+
+    // 辅助函数：显示结果
+    function displayResult(elementId, content, isError = false) {
+      const element = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      const className = isError ? 'error' : 'success';
+      element.innerHTML = `
+        <div class="${className}">
+          <strong>[${timestamp}]</strong> ${content}
+        </div>
+      `;
+    }
+
+    // 辅助函数：显示推荐列表
+    function displayRecommendations(elementId, recommendations, metadata) {
+      const element = document.getElementById(elementId);
+      let html = `
+        <div class="success">
+          <strong>✅ 成功获取 ${recommendations.length} 条推荐</strong>
+          <br>Request ID: ${metadata.requestId}
+        </div>
+      `;
+      
+      recommendations.forEach((rec, index) => {
+        const scorePercent = (rec.score * 100).toFixed(0);
+        html += `
+          <div class="recommendation-card">
+            <div>
+              <strong>${index + 1}. ${rec.type}</strong>
+              <span class="score">${scorePercent}%</span>
+            </div>
+            <div style="margin-top: 8px; color: #666;">
+              ${rec.reason || '无说明'}
+            </div>
+          </div>
+        `;
+      });
+      
+      element.innerHTML = html;
+    }
+
+    // 模拟 loadRecommendations
+    async function loadRecommendations(params) {
+      hookState.loading = true;
+      hookState.error = null;
+      hookState.lastParams = params;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/recommend`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workflow_id: 'test-workflow',
+            source_node_id: params.sourceNodeId || 'node-1',
+            source_node_type: params.sourceNodeType,
+            limit: params.limit || 5
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        hookState.recommendations = data.recommendations || [];
+        hookState.requestId = data.request_id || '';
+        currentRequestId = hookState.requestId;
+        lastRecommendations = hookState.recommendations;
+        
+        return data;
+      } catch (err) {
+        hookState.error = err;
+        hookState.recommendations = [];
+        throw err;
+      } finally {
+        hookState.loading = false;
+      }
+    }
+
+    // 模拟 submitFeedback
+    async function submitFeedback(selectedType, userAction) {
+      if (!hookState.requestId) {
+        console.warn('No request ID, skipping feedback');
+        return { skipped: true };
+      }
+
+      const response = await fetch(`${API_BASE}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: hookState.requestId,
+          selected_node: selectedType,
+          user_action: userAction
+        })
+      });
+
+      return await response.json();
+    }
+
+    // 测试 1: 基础推荐
+    async function testBasicRecommendation() {
+      const resultDiv = document.getElementById('test1-results');
+      resultDiv.innerHTML = '<div class="loading">⏳ 加载中...</div>';
+
+      try {
+        const data = await loadRecommendations({
+          sourceNodeId: 'code-node-1',
+          sourceNodeType: 'CodeNode',
+          limit: 5
+        });
+
+        displayRecommendations('test1-results', data.recommendations, {
+          requestId: data.request_id
+        });
+      } catch (err) {
+        displayResult('test1-results', `❌ 错误: ${err.message}`, true);
+      }
+    }
+
+    // 测试 2: 不同节点类型
+    async function testNodeType(nodeType) {
+      const resultDiv = document.getElementById('test2-results');
+      resultDiv.innerHTML = `<div class="loading">⏳ 正在加载 ${nodeType} 的推荐...</div>`;
+
+      try {
+        const data = await loadRecommendations({
+          sourceNodeId: `${nodeType.toLowerCase()}-1`,
+          sourceNodeType: nodeType,
+          limit: 5
+        });
+
+        displayRecommendations('test2-results', data.recommendations, {
+          requestId: data.request_id
+        });
+      } catch (err) {
+        displayResult('test2-results', `❌ 错误: ${err.message}`, true);
+      }
+    }
+
+    // 测试 3: 加载推荐用于反馈测试
+    async function loadRecommendationsForFeedback() {
+      const resultDiv = document.getElementById('test3-results');
+      resultDiv.innerHTML = '<div class="loading">⏳ 加载推荐...</div>';
+
+      try {
+        const data = await loadRecommendations({
+          sourceNodeType: 'CodeNode',
+          limit: 3
+        });
+
+        displayRecommendations('test3-results', data.recommendations, {
+          requestId: data.request_id
+        });
+
+        // 显示反馈按钮
+        const feedbackDiv = document.getElementById('feedback-buttons');
+        if (data.recommendations.length > 0) {
+          const firstRec = data.recommendations[0];
+          feedbackDiv.innerHTML = `
+            <p>对推荐 "<strong>${firstRec.type}</strong>" 的反馈：</p>
+            <div class="action-buttons">
+              <button onclick="submitTestFeedback('${firstRec.type}', 'selected')">✅ 选择</button>
+              <button onclick="submitTestFeedback('${firstRec.type}', 'dismissed')">❌ 拒绝</button>
+              <button onclick="submitTestFeedback('${firstRec.type}', 'ignored')">⏭️ 忽略</button>
+            </div>
+          `;
+        }
+      } catch (err) {
+        displayResult('test3-results', `❌ 错误: ${err.message}`, true);
+      }
+    }
+
+    async function submitTestFeedback(nodeType, action) {
+      const resultDiv = document.getElementById('test3-results');
+      const existingContent = resultDiv.innerHTML;
+
+      try {
+        const result = await submitFeedback(nodeType, action);
+        
+        if (result.skipped) {
+          resultDiv.innerHTML = existingContent + 
+            '<div class="error">⚠️ 跳过反馈：没有 Request ID</div>';
+        } else {
+          resultDiv.innerHTML = existingContent + 
+            `<div class="success">✅ 反馈已提交: ${action} - ${nodeType}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = existingContent + 
+          `<div class="error">❌ 反馈提交失败: ${err.message}</div>`;
+      }
+    }
+
+    // 测试 4: 错误处理
+    async function testInvalidRequest() {
+      const resultDiv = document.getElementById('test4-results');
+      resultDiv.innerHTML = '<div class="loading">⏳ 测试无效请求...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/recommend`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}) // 空请求
+        });
+
+        const data = await response.json();
+        displayResult('test4-results', 
+          `服务器响应 (${response.status}): <pre>${JSON.stringify(data, null, 2)}</pre>`,
+          !response.ok
+        );
+      } catch (err) {
+        displayResult('test4-results', `❌ 网络错误: ${err.message}`, true);
+      }
+    }
+
+    async function testWithoutRequestId() {
+      const resultDiv = document.getElementById('test4-results');
+      
+      // 清空 requestId
+      hookState.requestId = '';
+      currentRequestId = '';
+
+      const result = await submitFeedback('TestNode', 'selected');
+      
+      if (result.skipped) {
+        displayResult('test4-results', 
+          '✅ 正确处理：没有 Request ID 时跳过反馈提交'
+        );
+      } else {
+        displayResult('test4-results', 
+          '❌ 错误：应该跳过反馈但实际提交了', 
+          true
+        );
+      }
+    }
+
+    // 测试 5: 重载
+    async function testReload() {
+      const resultDiv = document.getElementById('test5-results');
+      let log = '';
+
+      try {
+        // 1. 初始加载
+        log += '<div class="info-box">步骤 1: 加载推荐...</div>';
+        resultDiv.innerHTML = log;
+        
+        const data1 = await loadRecommendations({
+          sourceNodeType: 'LLMNode',
+          limit: 3
+        });
+        
+        log += `<div class="success">✅ 获取 ${data1.recommendations.length} 条推荐</div>`;
+        resultDiv.innerHTML = log;
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 2. 清空
+        log += '<div class="info-box">步骤 2: 清空推荐...</div>';
+        resultDiv.innerHTML = log;
+        
+        hookState.recommendations = [];
+        hookState.requestId = '';
+        
+        log += '<div class="success">✅ 已清空</div>';
+        resultDiv.innerHTML = log;
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 3. 重载（使用相同参数）
+        log += '<div class="info-box">步骤 3: 使用相同参数重新加载...</div>';
+        resultDiv.innerHTML = log;
+        
+        if (hookState.lastParams) {
+          const data2 = await loadRecommendations(hookState.lastParams);
+          log += `<div class="success">✅ 重新加载成功，获取 ${data2.recommendations.length} 条推荐</div>`;
+          log += `<pre>${JSON.stringify(data2.recommendations.map(r => ({
+            type: r.type,
+            score: r.score
+          })), null, 2)}</pre>`;
+        } else {
+          log += '<div class="error">❌ 没有保存上次的参数</div>';
+        }
+
+        resultDiv.innerHTML = log;
+      } catch (err) {
+        log += `<div class="error">❌ 错误: ${err.message}</div>`;
+        resultDiv.innerHTML = log;
+      }
+    }
+
+    // 检查服务器健康状态
+    async function checkServerHealth() {
+      const resultDiv = document.getElementById('server-status');
+      resultDiv.innerHTML = '<div class="loading">⏳ 检查服务器...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/health`);
+        const data = await response.json();
+        
+        if (data.status === 'healthy') {
+          displayResult('server-status', 
+            `✅ 服务器运行正常<br>服务: ${data.service || 'node-recommendation'}`
+          );
+        } else {
+          displayResult('server-status', 
+            `⚠️ 服务器状态: ${data.status}`, 
+            true
+          );
+        }
+      } catch (err) {
+        displayResult('server-status', 
+          `❌ 无法连接到服务器 (${API_BASE})<br>错误: ${err.message}<br><br>` +
+          `请确保测试服务器正在运行：<br>` +
+          `<code>cd backend/domain/workflow/recommendation/test_server && go run main.go</code>`,
+          true
+        );
+      }
+    }
+
+    // 页面加载时检查服务器
+    window.onload = () => {
+      checkServerHealth();
+    };
+  </script>
+</body>
+</html>
