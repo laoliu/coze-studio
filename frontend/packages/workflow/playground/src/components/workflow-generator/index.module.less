@@ -1,0 +1,157 @@
+.workflowGeneratorModal {
+  :global {
+    .arco-modal-content {
+      padding: 0;
+    }
+  }
+}
+
+.modalTitle {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.container {
+  padding: 24px;
+}
+
+.steps {
+  margin-bottom: 32px;
+}
+
+/* 步骤 1: 输入需求 */
+.step1 {
+  .inputSection {
+    margin-bottom: 24px;
+
+    .label {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-1);
+    }
+
+    .textarea {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  }
+
+  .examplesSection {
+    margin-bottom: 24px;
+
+    .examplesTitle {
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-2);
+    }
+
+    .exampleItem {
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      background: var(--color-fill-2);
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--color-text-2);
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--color-fill-3);
+        color: var(--color-text-1);
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+}
+
+/* 步骤 2: 生成中 */
+.step2 {
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+
+    .loadingText {
+      margin-top: 24px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-text-1);
+    }
+
+    .loadingHint {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--color-text-3);
+    }
+  }
+}
+
+/* 步骤 3: 预览结果 */
+.step3 {
+  .preview {
+    margin-bottom: 24px;
+
+    h3 {
+      margin-bottom: 16px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .workflowInfo {
+      padding: 16px;
+      background: var(--color-fill-1);
+      border-radius: 6px;
+      margin-bottom: 16px;
+
+      p {
+        margin-bottom: 8px;
+        font-size: 14px;
+        line-height: 1.6;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        strong {
+          font-weight: 600;
+          margin-right: 8px;
+        }
+      }
+    }
+
+    .notice {
+      padding: 12px 16px;
+      background: var(--color-primary-light-1);
+      border-left: 3px solid var(--color-primary-6);
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--color-text-2);
+      line-height: 1.6;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+}

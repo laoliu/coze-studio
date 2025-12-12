@@ -9,7 +9,7 @@ import type {
   RecommendedNode,
   RecommendationRequest,
 } from '../../typing/recommendation';
-import { recommendationService } from '../../services/recommendation-service';
+import { recommendationService } from '../../../services/recommendation-service';
 
 interface UseNodeRecommendationParams {
   /** 源节点ID */

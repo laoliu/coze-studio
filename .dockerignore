@@ -2,6 +2,10 @@
 **/node_modules
 **/node_modules/**
 
+# Exclude Docker data and volumes
+docker/data/
+docker/volumes/
+
 # Exclude build artifacts
 **/dist
 **/build

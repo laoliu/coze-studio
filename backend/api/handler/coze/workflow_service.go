@@ -1260,3 +1260,35 @@ func OpenAPICreateConversation(ctx context.Context, c *app.RequestContext) {
 
 	c.JSON(consts.StatusOK, resp)
 }
+
+// GenerateWorkflow 智能生成工作流
+// @router /api/workflow_api/generate [POST]
+func GenerateWorkflow(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req workflow.GenerateWorkflowRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		invalidParamRequestResponse(c, err.Error())
+		return
+	}
+
+	resp, err := appworkflow.SVC.GenerateWorkflow(ctx, &req)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// GetLLMStatus 获取 LLM 配置状态
+// @router /api/workflow_api/llm_status [GET]
+func GetLLMStatus(ctx context.Context, c *app.RequestContext) {
+	status, err := appworkflow.SVC.GetLLMStatus(ctx)
+	if err != nil {
+		internalServerErrorResponse(ctx, c, err)
+		return
+	}
+
+	c.JSON(consts.StatusOK, status)
+}

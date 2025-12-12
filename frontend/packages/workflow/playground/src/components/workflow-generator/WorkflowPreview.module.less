@@ -1,0 +1,131 @@
+.workflowPreview {
+  .section {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .explanation {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-2);
+
+    h4 {
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-1);
+    }
+
+    p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--color-text-2);
+    }
+  }
+
+  .nodeCard {
+    background: var(--color-bg-2);
+    transition: all 0.2s;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .nodeHeader {
+    margin-bottom: 8px;
+
+    .nodeIndex {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--color-fill-3);
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-2);
+    }
+  }
+
+  .nodeDescription {
+    margin: 8px 0;
+    padding-left: 32px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-3);
+  }
+
+  .nodeConfig {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--color-fill-1);
+    border-radius: 4px;
+
+    .configTitle {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-2);
+    }
+
+    .configContent {
+      margin: 0;
+      padding: 8px;
+      background: var(--color-bg-1);
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--color-text-2);
+      overflow-x: auto;
+    }
+  }
+
+  .edgesList {
+    .edgeItem {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      margin-bottom: 4px;
+      background: var(--color-fill-1);
+      border-radius: 4px;
+      font-size: 13px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--color-fill-2);
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .edgeIndex {
+        min-width: 24px;
+        margin-right: 8px;
+        font-weight: 600;
+        color: var(--color-text-3);
+      }
+
+      .edgeSource,
+      .edgeTarget {
+        padding: 4px 8px;
+        background: var(--color-bg-2);
+        border-radius: 3px;
+        font-weight: 500;
+        color: var(--color-text-1);
+      }
+
+      .edgeArrow {
+        margin: 0 12px;
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--color-primary-6);
+      }
+    }
+  }
+}

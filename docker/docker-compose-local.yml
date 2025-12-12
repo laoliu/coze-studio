@@ -1,0 +1,324 @@
+x-env-file: &env_file
+  - .env
+
+services:
+  mysql:
+    image: mysql:8.4.5
+    container_name: coze-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-opencoze}
+      MYSQL_USER: ${MYSQL_USER:-coze}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-coze123}
+    env_file: *env_file
+    # ports:
+    #   - '3306'
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./volumes/mysql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./atlas/opencoze_latest_schema.hcl:/opencoze_latest_schema.hcl:ro
+    entrypoint:
+      - bash
+      - -c
+      - |
+        /usr/local/bin/docker-entrypoint.sh mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci &
+        MYSQL_PID=$$!
+
+        echo 'Waiting for MySQL to start...'
+        until mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent 2>/dev/null; do
+          echo 'MySQL is starting...'
+          sleep 2
+        done
+
+        echo 'Waiting for workflow_version table to exist...'
+        while true; do
+          if mysql -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} $${MYSQL_DATABASE} -e "SHOW TABLES LIKE 'workflow_version';" 2>/dev/null | grep -q "workflow_version"; then
+            echo 'Found workflow_version table, continuing...'
+            break
+          else
+            echo 'workflow_version table not found, retrying in 2 seconds...'
+            sleep 2
+          fi
+        done
+
+        echo 'MySQL is ready, installing Atlas CLI...'
+
+        # if ! command -v atlas >/dev/null 2>&1; then
+        #   echo 'Installing Atlas CLI...'
+        #   curl -sSf https://atlasgo.sh | sh -s -- -y --community
+        #   export PATH="/root/.local/bin:$PATH"
+        # fi
+
+        # echo 'Running Atlas migration apply...'
+        # atlas migrate apply \
+        #   --dir file:///opencoze_latest_schema.hcl \
+        #   --url "mysql://root:$${MYSQL_ROOT_PASSWORD}@localhost:3306/$${MYSQL_DATABASE}"
+
+        echo 'Atlas migration complete. Keeping MySQL running...'
+        wait $$MYSQL_PID
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-uroot',
+          '-p${MYSQL_ROOT_PASSWORD:-root}',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
+    networks:
+      - coze-network
+
+  redis:
+    image: bitnamilegacy/redis:8.0
+    container_name: coze-redis
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    env_file: *env_file
+    # ports:
+    #   - '6379'
+    volumes:
+      - ./data/redis:/bitnami/redis/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - coze-network
+
+  elasticsearch:
+    image: bitnamilegacy/elasticsearch:8.18.0
+    container_name: coze-elasticsearch
+    restart: always
+    environment:
+      - ELASTICSEARCH_ENABLE_SECURITY=false
+      - ELASTICSEARCH_SKIP_TRANSPORT_TLS=true
+      - ELASTICSEARCH_ENABLE_FIPS_MODE=false
+    env_file: *env_file
+    # ports:
+    #   - '9200'
+    #   - '9300'
+    volumes:
+      - elasticsearch-data:/bitnami/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'curl -s http://localhost:9200/_cluster/health | grep -q ''"status":"green"''',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    networks:
+      - coze-network
+
+  minio:
+    image: minio/minio:RELEASE.2025-06-13T11-33-47Z-cpuv1
+    container_name: coze-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    env_file: *env_file
+    command: server /data --console-address ":9001"
+    # ports:
+    #   - '9000'
+    #   - '9001'
+    volumes:
+      - ./data/minio:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - coze-network
+
+  etcd:
+    image: bitnamilegacy/etcd:3.5
+    container_name: coze-etcd
+    restart: always
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+    env_file: *env_file
+    # ports:
+    #   - '2379'
+    #   - '2380'
+    volumes:
+      - etcd-data:/bitnami/etcd/data
+    healthcheck:
+      test: ['CMD', 'etcdctl', 'endpoint', 'health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    networks:
+      - coze-network
+
+  milvus:
+    image: milvusdb/milvus:v2.5.10
+    container_name: coze-milvus
+    user: root
+    privileged: true
+    restart: always
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MINIO_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_DEFAULT_BUCKETS:-milvus}
+    env_file: *env_file
+    command: >
+      bash -c "
+        chown -R root:root /var/lib/milvus
+        chmod g+s /var/lib/milvus
+        exec milvus run standalone
+      "
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ./data/milvus:/var/lib/milvus:rw,Z
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9091/healthz']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    networks:
+      - coze-network
+
+  nsqlookupd:
+    image: nsqio/nsq:v1.2.1
+    container_name: coze-nsqlookupd
+    restart: always
+    command: /nsqlookupd
+    env_file: *env_file
+    # ports:
+    #   - '4160'
+    #   - '4161'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:4161/ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - coze-network
+
+  nsqd:
+    image: nsqio/nsq:v1.2.1
+    container_name: coze-nsqd
+    restart: always
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160
+    env_file: *env_file
+    # ports:
+    #   - '4150'
+    #   - '4151'
+    depends_on:
+      nsqlookupd:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:4151/ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+    networks:
+      - coze-network
+
+  nsqadmin:
+    image: nsqio/nsq:v1.2.1
+    container_name: coze-nsqadmin
+    restart: always
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    env_file: *env_file
+    # ports:
+    #   - '4171'
+    depends_on:
+      nsqlookupd:
+        condition: service_healthy
+    networks:
+      - coze-network
+
+  # ============================================================
+  # 🔧 本地构建的服务（使用本地代码）
+  # ============================================================
+  coze-server:
+    build:
+      context: ../
+      dockerfile: backend/Dockerfile
+    # image: cozedev/coze-studio-server:latest  # 注释掉官方镜像
+    restart: always
+    container_name: coze-server
+    env_file: *env_file
+    # environment:
+    #   LISTEN_ADDR: 0.0.0.0:8888
+    networks:
+      - coze-network
+    # ports:
+    #   - '8888'
+    #   - '8889'
+    volumes:
+      - .env:/app/.env
+      - ../backend/conf:/app/resources/conf
+      # - ../backend/static:/app/resources/static
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    command: ['/app/opencoze']
+
+  coze-web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    # image: cozedev/coze-studio-web:latest  # 注释掉官方镜像
+    container_name: coze-web
+    restart: always
+    ports:
+      - "${WEB_LISTEN_ADDR:-8888}:80"
+      # - "443:443"  # SSL port (uncomment if using SSL)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # Main nginx config
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro  # Proxy config
+      # - ./nginx/ssl:/etc/nginx/ssl:ro  # SSL certificates (uncomment if using SSL)
+    depends_on:
+      - coze-server
+    networks:
+      - coze-network
+
+networks:
+  coze-network:
+    driver: bridge
+
+volumes:
+  etcd-data:
+    driver: local
+  elasticsearch-data:
+    driver: local

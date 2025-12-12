@@ -1,0 +1,206 @@
+# 工作流最佳实践模板库
+# 用于工作流自动生成时的模板匹配
+
+templates:
+  - id: content_generation
+    name: "内容生成工作流"
+    description: "使用 LLM 生成内容，包含质量检查和格式化"
+    tags:
+      - llm
+      - content
+      - generation
+    use_cases:
+      - "文章生成"
+      - "课程大纲生成"
+      - "商品描述生成"
+      - "文案创作"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+          outputs:
+            - user_input
+        - type: LLM
+          name: "内容生成"
+          function: "generate_content"
+          config:
+            temperature: 0.7
+            output_format: "text"
+        - type: Code
+          name: "内容检查"
+          function: "validate_content"
+        - type: If
+          name: "质量判断"
+          config:
+            condition: "content_quality > 0.8"
+        - type: End
+          name: "结束"
+          
+  - id: data_extraction
+    name: "数据提取与处理"
+    description: "从非结构化数据中提取信息并结构化"
+    tags:
+      - extraction
+      - nlp
+      - data_processing
+    use_cases:
+      - "简历信息提取"
+      - "文档解析"
+      - "表单数据提取"
+      - "合同信息提取"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: LLM
+          name: "信息提取"
+          config:
+            output_format: "json"
+        - type: Code
+          name: "数据清洗"
+        - type: Database
+          name: "保存数据"
+          config:
+            operation: "insert"
+        - type: End
+          name: "结束"
+          
+  - id: rag_workflow
+    name: "RAG 知识问答"
+    description: "检索增强生成，基于知识库回答问题"
+    tags:
+      - rag
+      - knowledge
+      - qa
+    use_cases:
+      - "智能客服"
+      - "文档问答"
+      - "知识库检索"
+      - "FAQ 自动回复"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: Knowledge
+          name: "知识检索"
+          config:
+            operation: "search"
+            top_k: 5
+        - type: Code
+          name: "结果排序"
+        - type: LLM
+          name: "答案生成"
+          config:
+            with_context: true
+        - type: End
+          name: "结束"
+          
+  - id: batch_processing
+    name: "批量数据处理"
+    description: "循环处理大量数据项"
+    tags:
+      - loop
+      - batch
+      - parallel
+    use_cases:
+      - "批量翻译"
+      - "批量生成"
+      - "数据迁移"
+      - "批量分类"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: Database
+          name: "读取数据"
+          config:
+            operation: "query"
+        - type: Loop
+          name: "遍历数据"
+          loop_nodes:
+            - type: LLM
+              name: "处理单项"
+            - type: Database
+              name: "更新数据"
+              config:
+                operation: "update"
+        - type: End
+          name: "结束"
+          
+  - id: api_integration
+    name: "API 集成工作流"
+    description: "调用外部 API 并处理响应"
+    tags:
+      - api
+      - integration
+      - plugin
+    use_cases:
+      - "第三方服务集成"
+      - "数据同步"
+      - "外部 API 调用"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: Code
+          name: "准备参数"
+        - type: Plugin
+          name: "调用 API"
+        - type: Code
+          name: "处理响应"
+        - type: End
+          name: "结束"
+          
+  - id: data_transformation
+    name: "数据转换管道"
+    description: "多步骤数据转换和处理"
+    tags:
+      - etl
+      - transformation
+      - pipeline
+    use_cases:
+      - "数据清洗"
+      - "格式转换"
+      - "数据聚合"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: Database
+          name: "读取源数据"
+          config:
+            operation: "query"
+        - type: Code
+          name: "数据转换"
+        - type: Code
+          name: "数据验证"
+        - type: Database
+          name: "写入目标"
+          config:
+            operation: "insert"
+        - type: End
+          name: "结束"
+
+  - id: decision_automation
+    name: "自动决策工作流"
+    description: "基于规则或 AI 进行自动决策"
+    tags:
+      - decision
+      - automation
+      - if_else
+    use_cases:
+      - "审批自动化"
+      - "内容审核"
+      - "风险评估"
+    pattern:
+      nodes:
+        - type: Start
+          name: "开始"
+        - type: LLM
+          name: "分析评估"
+        - type: Code
+          name: "计算分数"
+        - type: If
+          name: "决策判断"
+        - type: End
+          name: "结束"

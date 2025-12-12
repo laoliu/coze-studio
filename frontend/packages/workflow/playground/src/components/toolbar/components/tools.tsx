@@ -33,6 +33,7 @@ import { Interactive } from './interactive';
 import { Comment } from './comment';
 import { AutoLayout } from './auto-layout';
 import { AddNode } from './add-node';
+import { RecommendationButton } from './recommendation-button';
 
 import css from './tools.module.less';
 
@@ -56,6 +57,7 @@ export const Tools = (props: ITool) => {
         <Zoom />
         <Comment />
         <AutoLayout />
+        <RecommendationButton />
         <MinimapSwitch {...props} />
         {enableAddNode ? (
           <>

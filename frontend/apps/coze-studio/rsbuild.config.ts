@@ -66,6 +66,8 @@ const mergedConfig = defineConfig({
       addPlugins([require('tailwindcss')('./tailwind.config.ts')]);
     },
     rspack(config, { appendPlugins, addRules, mergeConfig }) {
+      const webpack = require('@rspack/core');
+      
       addRules([
         {
           test: /\.(css|less|jsx|tsx|ts|js)/,
@@ -76,6 +78,12 @@ const mergedConfig = defineConfig({
           ],
           use: '@coze-arch/import-watch-loader',
         },
+      ]);
+
+      appendPlugins([
+        new webpack.ProvidePlugin({
+          process: 'process/browser',
+        }),
       ]);
 
       return mergeConfig(config, {
@@ -89,6 +97,7 @@ const mergedConfig = defineConfig({
         resolve: {
           fallback: {
             path: require.resolve('path-browserify'),
+            process: require.resolve('process/browser'),
           },
         },
         watchOptions: {

@@ -23,6 +23,8 @@ import (
 	"io"
 	"math/rand"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -31,6 +33,7 @@ import (
 	"github.com/coze-dev/coze-studio/backend/infra/storage"
 	"github.com/coze-dev/coze-studio/backend/infra/storage/impl/internal/fileutil"
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
+	"github.com/coze-dev/coze-studio/backend/types/consts"
 )
 
 type minioClient struct {
@@ -39,6 +42,7 @@ type minioClient struct {
 	secretAccessKey string
 	bucketName      string
 	endpoint        string
+	apiHost         string // External API host for URL generation
 }
 
 func New(ctx context.Context, endpoint, accessKeyID, secretAccessKey, bucketName string, useSSL bool) (storage.Storage, error) {
@@ -59,12 +63,24 @@ func getMinioClient(ctx context.Context, endpoint, accessKeyID, secretAccessKey,
 		return nil, fmt.Errorf("init minio client failed %v", err)
 	}
 
+	// Get external API host for URL generation, fallback to endpoint
+	apiHost := os.Getenv(consts.MinIOAPIHost)
+	if apiHost == "" {
+		apiHost = endpoint
+		if useSSL {
+			apiHost = "https://" + apiHost
+		} else {
+			apiHost = "http://" + apiHost
+		}
+	}
+
 	m := &minioClient{
 		client:          client,
 		accessKeyID:     accessKeyID,
 		secretAccessKey: secretAccessKey,
 		bucketName:      bucketName,
 		endpoint:        endpoint,
+		apiHost:         apiHost,
 	}
 
 	err = m.createBucketIfNeed(ctx, client, bucketName, "cn-north-1")
@@ -234,7 +250,29 @@ func (m *minioClient) GetObjectUrl(ctx context.Context, objectKey string, opts .
 		return "", fmt.Errorf("GetObjectUrl failed: %v", err)
 	}
 
-	return presignedURL.String(), nil
+	urlStr := presignedURL.String()
+	
+	// Replace internal endpoint with external API host if configured
+	if m.apiHost != "" && m.apiHost != "http://"+m.endpoint && m.apiHost != "https://"+m.endpoint {
+		// Parse the original URL to extract path and query
+		parsedURL, err := url.Parse(urlStr)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse presigned URL: %v", err)
+		}
+		
+		// Build new URL with external host
+		// Remove leading slash from apiHost if present
+		apiHost := strings.TrimRight(m.apiHost, "/")
+		newURL := apiHost + parsedURL.Path
+		if parsedURL.RawQuery != "" {
+			newURL += "?" + parsedURL.RawQuery
+		}
+		
+		logs.CtxDebugf(ctx, "Replaced Minio URL from %s to %s", urlStr, newURL)
+		return newURL, nil
+	}
+
+	return urlStr, nil
 }
 
 func (m *minioClient) ListObjectsPaginated(ctx context.Context, input *storage.ListObjectsPaginatedInput, opts ...storage.GetOptFn) (*storage.ListObjectsPaginatedOutput, error) {
