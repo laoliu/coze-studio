@@ -20,13 +20,13 @@
  * 节点推荐API服务
  */
 
-import { API_CONFIG } from '../config/api';
 import type {
   RecommendationRequest,
   RecommendationResponse,
   FeedbackRequest,
   FeedbackResponse,
 } from '../typing/recommendation';
+import { API_CONFIG } from '../config/api';
 
 /**
  * 节点推荐服务类
@@ -38,7 +38,7 @@ export class RecommendationService {
    * 获取节点推荐
    */
   async getRecommendations(
-    params: Omit<RecommendationRequest, 'includeReason'>
+    params: Omit<RecommendationRequest, 'includeReason'>,
   ): Promise<RecommendationResponse> {
     const DEFAULT_LIMIT = 10;
     const response = await fetch(`${this.baseURL}/recommend`, {
@@ -114,7 +114,8 @@ export class RecommendationService {
           category: recData.category as string,
           suggestedConfig: recData.suggested_config as Record<string, unknown>,
           strategySource: recData.strategy_source as string,
-      })),
+        };
+      }),
       metadata: {
         requestId: data.metadata?.request_id,
         totalCandidates: data.metadata?.total_candidates,
