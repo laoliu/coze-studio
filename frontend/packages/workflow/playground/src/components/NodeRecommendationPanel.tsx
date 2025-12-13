@@ -22,8 +22,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useNodeRecommendation } from '../hooks/use-node-recommendation';
+
 import type { RecommendedNode } from '../typing/recommendation';
+import { useNodeRecommendation } from '../hooks/use-node-recommendation';
+
 import styles from './NodeRecommendationPanel.module.less';
 
 export interface NodeRecommendationPanelProps {
@@ -93,33 +95,53 @@ export const NodeRecommendationPanel: React.FC<
     } else {
       clearRecommendations();
     }
-  }, [selectedNode?.id, selectedNode?.type, visible, loadRecommendations, clearRecommendations, selectedNode]);
+  }, [
+    selectedNode?.id,
+    selectedNode?.type,
+    visible,
+    loadRecommendations,
+    clearRecommendations,
+    selectedNode,
+  ]);
 
   // 处理推荐点击
   const handleRecommendationClick = async (recommendation: RecommendedNode) => {
+    console.log('🎯 点击推荐卡片:', recommendation.nodeType);
+
     try {
       setSelectedRecommendation(recommendation.nodeType);
 
+      // 先添加节点
+      if (onAddNode) {
+        console.log('📝 调用 onAddNode 回调...');
+        await onAddNode(recommendation.nodeType);
+        console.log('✅ onAddNode 回调执行完成');
+      } else {
+        console.warn('⚠️ onAddNode 回调未定义');
+      }
+
       // 提交反馈
+      console.log('📤 提交反馈...');
       await submitFeedback(recommendation.nodeType, 'selected');
-
-      // 调用添加节点回调
-      onAddNode?.(recommendation.nodeType);
-
-      // 提示成功
-      console.log(`✅ 已添加节点: ${recommendation.nodeType}`);
+      console.log('✅ 反馈提交成功');
 
       setSelectedRecommendation(null);
     } catch (err) {
-      console.error('Failed to add node:', err);
+      console.error('❌ 处理推荐点击失败:', err);
       setSelectedRecommendation(null);
     }
   };
 
   // 处理拒绝推荐
   const handleDismiss = async (recommendation: RecommendedNode) => {
-    await submitFeedback(recommendation.nodeType, 'dismissed');
-    console.log(`❌ 已拒绝推荐: ${recommendation.nodeType}`);
+    console.log('🚫 点击关闭按钮:', recommendation.nodeType);
+
+    try {
+      await submitFeedback(recommendation.nodeType, 'dismissed');
+      console.log('✅ 已拒绝推荐:', recommendation.nodeType);
+    } catch (err) {
+      console.error('❌ 拒绝推荐失败:', err);
+    }
   };
 
   // 处理重新加载
@@ -136,7 +158,7 @@ export const NodeRecommendationPanel: React.FC<
       {/* 标题栏 */}
       <div className={styles['panel-header']}>
         <h3 className={styles['panel-title']}>
-          <span className={styles['icon']}>💡</span>
+          <span className={styles.icon}>💡</span>
           推荐的下一步节点
         </h3>
         {recommendations.length > 0 && (
@@ -152,22 +174,22 @@ export const NodeRecommendationPanel: React.FC<
       </div>
 
       {/* 加载状态 */}
-      {loading && (
+      {loading ? (
         <div className={styles['loading-state']}>
-          <div className={styles['spinner']}></div>
+          <div className={styles.spinner}></div>
           <p>正在获取推荐...</p>
         </div>
-      )}
+      ) : null}
 
       {/* 错误状态 */}
-      {error && (
+      {error ? (
         <div className={styles['error-state']}>
           <p className={styles['error-message']}>❌ {error.message}</p>
           <button className={styles['retry-button']} onClick={handleReload}>
             重试
           </button>
         </div>
-      )}
+      ) : null}
 
       {/* 推荐列表 */}
       {!loading && !error && recommendations.length > 0 && (
@@ -186,14 +208,14 @@ export const NodeRecommendationPanel: React.FC<
       )}
 
       {/* 空状态 */}
-      {!loading && !error && recommendations.length === 0 && selectedNode && (
+      {!loading && !error && recommendations.length === 0 && selectedNode ? (
         <div className={styles['empty-state']}>
           <p>暂无推荐节点</p>
           <p className={styles['empty-hint']}>
             当前节点类型: {selectedNode.type}
           </p>
         </div>
-      )}
+      ) : null}
 
       {/* 未选中节点提示 */}
       {!selectedNode && (
@@ -227,23 +249,34 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   onDismiss,
 }) => {
   const SCORE_PERCENT_MULTIPLIER = 100;
-  const scorePercent = Math.round(recommendation.score * SCORE_PERCENT_MULTIPLIER);
+  const scorePercent = Math.round(
+    recommendation.score * SCORE_PERCENT_MULTIPLIER,
+  );
 
   // 根据分数确定颜色
   const SCORE_EXCELLENT = 0.9;
   const SCORE_GOOD = 0.8;
   const SCORE_MEDIUM = 0.6;
   const getScoreColor = (score: number) => {
-    if (score >= SCORE_EXCELLENT) return 'excellent';
-    if (score >= SCORE_GOOD) return 'good';
-    if (score >= SCORE_MEDIUM) return 'medium';
+    if (score >= SCORE_EXCELLENT) {
+      return 'excellent';
+    }
+    if (score >= SCORE_GOOD) {
+      return 'good';
+    }
+    if (score >= SCORE_MEDIUM) {
+      return 'medium';
+    }
     return 'low';
   };
 
   return (
     <div
-      className={`${styles['recommendation-card']} ${selected ? styles['selected'] : ''}`}
-      onClick={onSelect}
+      className={`${styles['recommendation-card']} ${selected ? styles.selected : ''}`}
+      onClick={e => {
+        console.log('🃏 卡片被点击:', recommendation.nodeType);
+        onSelect();
+      }}
     >
       {/* 排名徽章 */}
       <div className={styles['rank-badge']}>#{rank}</div>
@@ -260,16 +293,16 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
         </div>
 
         {/* 推荐原因 */}
-        {recommendation.reason && (
-          <p className={styles['reason']}>{recommendation.reason}</p>
-        )}
+        {recommendation.reason ? (
+          <p className={styles.reason}>{recommendation.reason}</p>
+        ) : null}
 
         {/* 分类标签 */}
-        {recommendation.metadata?.category && (
+        {recommendation.metadata?.category ? (
           <span className={styles['category-tag']}>
             {recommendation.metadata.category}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* 操作按钮 */}
@@ -277,7 +310,9 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
         <button
           className={styles['dismiss-button']}
           onClick={e => {
+            console.log('🔴 关闭按钮被点击');
             e.stopPropagation();
+            e.preventDefault();
             onDismiss();
           }}
           title="不感兴趣"
@@ -287,11 +322,11 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
       </div>
 
       {/* 加载指示器 */}
-      {selected && (
+      {selected ? (
         <div className={styles['card-loading']}>
           <div className={styles['spinner-small']}></div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
