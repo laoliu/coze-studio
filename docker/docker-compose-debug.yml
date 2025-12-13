@@ -15,7 +15,7 @@ services:
     profiles: ['middleware', 'mysql-setup', 'mysql']
     env_file: *env_file
     ports:
-      - '127.0.0.1:3306:3306'
+      - '127.0.0.1:3307:3306'
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./volumes/mysql/schema.sql:/docker-entrypoint-initdb.d/init.sql

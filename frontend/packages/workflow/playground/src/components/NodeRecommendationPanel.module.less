@@ -7,50 +7,59 @@
 .node-recommendation-panel {
   display: flex;
   flex-direction: column;
-  width: 320px;
+  width: 340px;
   height: 100%;
-  background: #ffffff;
-  border-left: 1px solid #e8e8e8;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
 
   /* 标题栏 */
   .panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    border-bottom: 2px solid #e0f2fe;
 
     .panel-title {
       margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1a1a1a;
+      font-size: 17px;
+      font-weight: 700;
+      color: #111827;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      letter-spacing: -0.01em;
 
       .icon {
-        font-size: 20px;
+        font-size: 22px;
+        filter: drop-shadow(0 2px 4px rgba(234, 179, 8, 0.3));
       }
     }
 
     .reload-button {
-      background: none;
-      border: none;
-      padding: 4px 8px;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      border: 1.5px solid #d1d5db;
+      padding: 6px 10px;
       cursor: pointer;
       font-size: 18px;
-      border-radius: 4px;
-      transition: background 0.2s;
+      border-radius: 8px;
+      transition: all 0.25s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 
       &:hover:not(:disabled) {
-        background: #f5f5f5;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-color: #1d4ed8;
+        color: white;
+        transform: rotate(180deg) scale(1.05);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
       }
 
       &:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
+        transform: none;
       }
     }
   }
@@ -123,40 +132,50 @@
   /* 推荐卡片 */
   .recommendation-card {
     position: relative;
-    padding: 16px;
-    background: #fafafa;
-    border: 2px solid transparent;
-    border-radius: 8px;
+    padding: 16px 48px 16px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
     &:hover {
-      background: #f0f7ff;
-      border-color: #91d5ff;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-color: #60a5fa;
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+
+      .rank-badge {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        transform: scale(1.1);
+      }
     }
 
     &.selected {
-      border-color: #1890ff;
-      background: #e6f7ff;
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 20px rgba(59, 130, 246, 0.25);
     }
 
     /* 排名徽章 */
     .rank-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      width: 24px;
-      height: 24px;
-      background: #1890ff;
+      top: 14px;
+      right: 14px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 6px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white;
-      border-radius: 50%;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+      transition: all 0.3s;
     }
 
     /* 节点信息 */
@@ -164,90 +183,105 @@
       .node-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+        gap: 10px;
+        margin-bottom: 10px;
 
         .node-type {
-          font-size: 15px;
-          font-weight: 600;
-          color: #1a1a1a;
+          font-size: 16px;
+          font-weight: 700;
+          color: #111827;
           flex: 1;
+          letter-spacing: -0.01em;
         }
 
         .score-badge {
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 700;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
           &.excellent {
-            background: #f6ffed;
-            color: #52c41a;
-            border: 1px solid #b7eb8f;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+            border: 1.5px solid #6ee7b7;
           }
 
           &.good {
-            background: #e6f7ff;
-            color: #1890ff;
-            border: 1px solid #91d5ff;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #2563eb;
+            border: 1.5px solid #60a5fa;
           }
 
           &.medium {
-            background: #fffbe6;
-            color: #faad14;
-            border: 1px solid #ffe58f;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #d97706;
+            border: 1.5px solid #fbbf24;
           }
 
           &.low {
-            background: #fff1f0;
-            color: #ff4d4f;
-            border: 1px solid #ffccc7;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+            border: 1.5px solid #f87171;
           }
         }
       }
 
       .reason {
-        margin: 8px 0;
+        margin: 10px 0;
         font-size: 13px;
-        line-height: 1.5;
-        color: #595959;
+        line-height: 1.6;
+        color: #4b5563;
+        padding-left: 12px;
+        border-left: 3px solid #e5e7eb;
       }
 
       .category-tag {
         display: inline-block;
-        padding: 2px 8px;
-        background: #fafafa;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        font-size: 12px;
-        color: #8c8c8c;
+        padding: 4px 10px;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
     }
 
     /* 操作按钮 */
     .card-actions {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
+      bottom: 16px;
+      right: 16px;
 
       .dismiss-button {
-        width: 24px;
-        height: 24px;
-        background: rgba(0, 0, 0, 0.04);
-        border: none;
+        width: 28px;
+        height: 28px;
+        background: rgba(0, 0, 0, 0.06);
+        border: 1.5px solid rgba(0, 0, 0, 0.1);
         border-radius: 50%;
         cursor: pointer;
-        color: #8c8c8c;
-        font-size: 14px;
+        color: #6b7280;
+        font-size: 16px;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
+        transition: all 0.25s;
         opacity: 0;
 
         &:hover {
-          background: #ff4d4f;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
+          border-color: #dc2626;
+          transform: scale(1.15) rotate(90deg);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        &:active {
+          transform: scale(0.95) rotate(90deg);
         }
       }
     }
@@ -263,19 +297,20 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
+      border-radius: 12px;
 
       .spinner-small {
-        width: 24px;
-        height: 24px;
-        border: 3px solid #f0f0f0;
-        border-top-color: #1890ff;
+        width: 28px;
+        height: 28px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #3b82f6;
         border-radius: 50%;
-        animation: spin 1s linear infinite;
+        animation: spin 0.8s linear infinite;
       }
     }
   }

@@ -61,7 +61,7 @@ fi
 echo "🛠  Building Go project..."
 rm -rf "$BIN_DIR/opencoze"
 cd $BACKEND_DIR &&
-    go build -ldflags="-s -w" -o "$BIN_DIR/opencoze" main.go
+    go build -ldflags="-s -w -checklinkname=0" -o "$BIN_DIR/opencoze" main.go
 
 # 添加构建失败检查
 if [ $? -ne 0 ]; then
@@ -88,6 +88,9 @@ echo "📑 Copying plugin configuration files..."
 
 cp -r "$BACKEND_DIR/conf" "$RESOURCES_DIR"
 cp -r "$BACKEND_DIR/static" "$RESOURCES_DIR"
+
+echo "📑 Copying recommendation rules..."
+cp "$BACKEND_DIR/domain/workflow/recommendation/rules.yaml" "$BIN_DIR/rules.yaml"
 
 for arg in "$@"; do
     if [[ "$arg" == "-start" ]]; then

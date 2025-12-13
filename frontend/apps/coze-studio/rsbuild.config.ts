@@ -37,7 +37,13 @@ const mergedConfig = defineConfig({
         secure: false,
         changeOrigin: true,
         onProxyReq: (proxyReq, req, res) => {
-          console.log('[Recommendation Proxy]', req.method, req.url, '→', RECOMMENDATION_SERVICE_TARGET);
+          console.log(
+            '[Recommendation Proxy]',
+            req.method,
+            req.url,
+            '→',
+            RECOMMENDATION_SERVICE_TARGET,
+          );
         },
       },
       {
@@ -67,7 +73,7 @@ const mergedConfig = defineConfig({
     },
     rspack(config, { appendPlugins, addRules, mergeConfig }) {
       const webpack = require('@rspack/core');
-      
+
       addRules([
         {
           test: /\.(css|less|jsx|tsx|ts|js)/,
@@ -82,7 +88,7 @@ const mergedConfig = defineConfig({
 
       appendPlugins([
         new webpack.ProvidePlugin({
-          process: 'process/browser',
+          process: ['process/browser'],
         }),
       ]);
 
@@ -96,8 +102,8 @@ const mergedConfig = defineConfig({
         },
         resolve: {
           fallback: {
-            path: require.resolve('path-browserify'),
-            process: require.resolve('process/browser'),
+            path: 'path-browserify',
+            process: 'process/browser',
           },
         },
         watchOptions: {
@@ -137,6 +143,8 @@ const mergedConfig = defineConfig({
         '@coze-foundation/foundation-sdk',
       ),
       'react-router-dom': require.resolve('react-router-dom'),
+      process: require.resolve('process/browser.js'),
+      'process/browser': require.resolve('process/browser.js'),
     },
     /**
      * support inversify @injectable() and @inject decorators

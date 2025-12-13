@@ -31,7 +31,7 @@ import { LayoutPanelKey } from '@/constants';
 export const RecommendationButton = () => {
   const floatLayoutService = useFloatLayoutService();
   const selectService = useService(WorkflowSelectService);
-  const { readonly, workflowId } = useGlobalState();
+  const { workflowId } = useGlobalState();
 
   const handleClick = useCallback(() => {
     // 获取当前选中的节点
@@ -50,11 +50,7 @@ export const RecommendationButton = () => {
     });
   }, [floatLayoutService, selectService, workflowId]);
 
-  // 只读模式下不显示
-  if (readonly) {
-    return null;
-  }
-
+  // 推荐功能在只读模式下也可用，因为它只是提供建议，不会修改工作流
   return (
     <Tooltip content="智能推荐下一个节点">
       <IconButton

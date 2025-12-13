@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Copyright 2025 Coze Studio. All rights reserved.
  *
@@ -24,6 +40,7 @@ export class RecommendationService {
   async getRecommendations(
     params: Omit<RecommendationRequest, 'includeReason'>
   ): Promise<RecommendationResponse> {
+    const DEFAULT_LIMIT = 10;
     const response = await fetch(`${this.baseURL}/recommend`, {
       method: 'POST',
       headers: {
@@ -35,7 +52,7 @@ export class RecommendationService {
         source_node_type: params.sourceNodeType,
         source_node_name: params.sourceNodeName,
         output_format: params.outputFormat,
-        limit: params.limit || 10,
+        limit: params.limit || DEFAULT_LIMIT,
         include_reason: true,
         workflow_context: params.workflowContext
           ? {
@@ -58,40 +75,45 @@ export class RecommendationService {
     }
 
     const data = await response.json();
-    
+
     // 兼容测试服务器和生产服务器的响应格式
     // 测试服务器: { success, request_id, recommendations: [{type, score, reason}] }
     // 生产服务器: { recommendations: [{node_type, ...}], metadata: {request_id, ...} }
     const isTestServerResponse = data.success !== undefined;
-    
+
     if (isTestServerResponse) {
       // 测试服务器格式
       return {
-        recommendations: (data.recommendations || []).map((rec: any) => ({
-          nodeType: rec.type,
-          displayName: rec.type, // 测试服务器没有 display_name
-          score: rec.score,
-          reason: rec.reason,
-          category: rec.category,
-          metadata: rec.metadata,
-        })),
+        recommendations: (data.recommendations || []).map((rec: unknown) => {
+          const recData = rec as Record<string, unknown>;
+          return {
+            nodeType: recData.type as string,
+            displayName: recData.type as string, // 测试服务器没有 display_name
+            score: recData.score as number,
+            reason: recData.reason as string,
+            category: recData.category as string,
+            metadata: recData.metadata as Record<string, unknown>,
+          };
+        }),
         metadata: {
           requestId: data.request_id,
           totalCandidates: data.recommendations?.length || 0,
         },
       };
     }
-    
+
     // 生产服务器格式
     return {
-      recommendations: (data.recommendations || []).map((rec: any) => ({
-        nodeType: rec.node_type,
-        displayName: rec.display_name,
-        score: rec.score,
-        reason: rec.reason,
-        category: rec.category,
-        suggestedConfig: rec.suggested_config,
-        strategySource: rec.strategy_source,
+      recommendations: (data.recommendations || []).map((rec: unknown) => {
+        const recData = rec as Record<string, unknown>;
+        return {
+          nodeType: recData.node_type as string,
+          displayName: recData.display_name as string,
+          score: recData.score as number,
+          reason: recData.reason as string,
+          category: recData.category as string,
+          suggestedConfig: recData.suggested_config as Record<string, unknown>,
+          strategySource: recData.strategy_source as string,
       })),
       metadata: {
         requestId: data.metadata?.request_id,
@@ -106,11 +128,12 @@ export class RecommendationService {
    * 记录用户反馈
    */
   async recordFeedback(params: FeedbackRequest): Promise<FeedbackResponse> {
-    // 测试服务器使用 /api/feedback，生产服务器使用 /api/workflow_api/node/recommend/feedback
-    const feedbackPath = this.baseURL === '/api' 
-      ? `${this.baseURL}/feedback`
-      : `${this.baseURL}/recommend/feedback`;
-      
+    // 测试服务器使用 /api/feedback，生产服务器使用 /api/workflow_api/recommend/feedback
+    const feedbackPath =
+      this.baseURL === '/api'
+        ? `${this.baseURL}/feedback`
+        : `${this.baseURL}/recommend/feedback`;
+
     const response = await fetch(feedbackPath, {
       method: 'POST',
       headers: {

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// 必须最先导入 polyfills
+import './polyfills';
+
 import { createRoot } from 'react-dom/client';
 import { initI18nInstance } from '@coze-arch/i18n/raw';
 import { dynamicImportMdBoxStyle } from '@coze-arch/bot-md-box-adapter/style';

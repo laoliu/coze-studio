@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Copyright 2025 Coze Studio. All rights reserved.
  *
@@ -8,7 +24,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNodeRecommendation } from '../hooks/use-node-recommendation';
 import type { RecommendedNode } from '../typing/recommendation';
-import './NodeRecommendationPanel.module.less';
+import styles from './NodeRecommendationPanel.module.less';
 
 export interface NodeRecommendationPanelProps {
   /** 工作流 ID */
@@ -17,7 +33,7 @@ export interface NodeRecommendationPanelProps {
   selectedNode?: {
     id: string;
     type: string;
-    outputs?: Record<string, any>;
+    outputs?: Record<string, unknown>;
   };
   /** 添加节点回调 */
   onAddNode?: (nodeType: string) => void;
@@ -27,14 +43,14 @@ export interface NodeRecommendationPanelProps {
 
 /**
  * 节点推荐面板组件
- * 
+ *
  * 功能：
  * 1. 自动加载当前节点的推荐
  * 2. 显示推荐列表（带分数和原因）
  * 3. 用户点击推荐时添加节点并提交反馈
  * 4. 支持重新加载
  * 5. 错误处理和加载状态
- * 
+ *
  * @example
  * ```tsx
  * <NodeRecommendationPanel
@@ -48,12 +64,9 @@ export interface NodeRecommendationPanelProps {
  * />
  * ```
  */
-export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = ({
-  workflowId,
-  selectedNode,
-  onAddNode,
-  visible = true,
-}) => {
+export const NodeRecommendationPanel: React.FC<
+  NodeRecommendationPanelProps
+> = ({ workflowId, selectedNode, onAddNode, visible = true }) => {
   const {
     recommendations,
     loading,
@@ -64,7 +77,9 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
     reload,
   } = useNodeRecommendation({ workflowId });
 
-  const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<
+    string | null
+  >(null);
 
   // 当选中节点变化时，加载推荐
   useEffect(() => {
@@ -78,22 +93,22 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
     } else {
       clearRecommendations();
     }
-  }, [selectedNode?.id, selectedNode?.type, visible]);
+  }, [selectedNode?.id, selectedNode?.type, visible, loadRecommendations, clearRecommendations, selectedNode]);
 
   // 处理推荐点击
   const handleRecommendationClick = async (recommendation: RecommendedNode) => {
     try {
       setSelectedRecommendation(recommendation.nodeType);
-      
+
       // 提交反馈
       await submitFeedback(recommendation.nodeType, 'selected');
-      
+
       // 调用添加节点回调
       onAddNode?.(recommendation.nodeType);
-      
+
       // 提示成功
       console.log(`✅ 已添加节点: ${recommendation.nodeType}`);
-      
+
       setSelectedRecommendation(null);
     } catch (err) {
       console.error('Failed to add node:', err);
@@ -117,16 +132,16 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
   }
 
   return (
-    <div className="node-recommendation-panel">
+    <div className={styles['node-recommendation-panel']}>
       {/* 标题栏 */}
-      <div className="panel-header">
-        <h3 className="panel-title">
-          <span className="icon">💡</span>
+      <div className={styles['panel-header']}>
+        <h3 className={styles['panel-title']}>
+          <span className={styles['icon']}>💡</span>
           推荐的下一步节点
         </h3>
         {recommendations.length > 0 && (
-          <button 
-            className="reload-button"
+          <button
+            className={styles['reload-button']}
             onClick={handleReload}
             disabled={loading}
             title="重新加载推荐"
@@ -138,17 +153,17 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
 
       {/* 加载状态 */}
       {loading && (
-        <div className="loading-state">
-          <div className="spinner"></div>
+        <div className={styles['loading-state']}>
+          <div className={styles['spinner']}></div>
           <p>正在获取推荐...</p>
         </div>
       )}
 
       {/* 错误状态 */}
       {error && (
-        <div className="error-state">
-          <p className="error-message">❌ {error.message}</p>
-          <button className="retry-button" onClick={handleReload}>
+        <div className={styles['error-state']}>
+          <p className={styles['error-message']}>❌ {error.message}</p>
+          <button className={styles['retry-button']} onClick={handleReload}>
             重试
           </button>
         </div>
@@ -156,7 +171,7 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
 
       {/* 推荐列表 */}
       {!loading && !error && recommendations.length > 0 && (
-        <div className="recommendations-list">
+        <div className={styles['recommendations-list']}>
           {recommendations.map((recommendation, index) => (
             <RecommendationCard
               key={`${recommendation.nodeType}-${index}`}
@@ -172,9 +187,9 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
 
       {/* 空状态 */}
       {!loading && !error && recommendations.length === 0 && selectedNode && (
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           <p>暂无推荐节点</p>
-          <p className="empty-hint">
+          <p className={styles['empty-hint']}>
             当前节点类型: {selectedNode.type}
           </p>
         </div>
@@ -182,9 +197,9 @@ export const NodeRecommendationPanel: React.FC<NodeRecommendationPanelProps> = (
 
       {/* 未选中节点提示 */}
       {!selectedNode && (
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           <p>👈 请先选择一个节点</p>
-          <p className="empty-hint">
+          <p className={styles['empty-hint']}>
             选中节点后，系统会自动推荐下一步可以添加的节点
           </p>
         </div>
@@ -211,51 +226,57 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   onSelect,
   onDismiss,
 }) => {
-  const scorePercent = Math.round(recommendation.score * 100);
-  
+  const SCORE_PERCENT_MULTIPLIER = 100;
+  const scorePercent = Math.round(recommendation.score * SCORE_PERCENT_MULTIPLIER);
+
   // 根据分数确定颜色
+  const SCORE_EXCELLENT = 0.9;
+  const SCORE_GOOD = 0.8;
+  const SCORE_MEDIUM = 0.6;
   const getScoreColor = (score: number) => {
-    if (score >= 0.9) return 'excellent';
-    if (score >= 0.8) return 'good';
-    if (score >= 0.6) return 'medium';
+    if (score >= SCORE_EXCELLENT) return 'excellent';
+    if (score >= SCORE_GOOD) return 'good';
+    if (score >= SCORE_MEDIUM) return 'medium';
     return 'low';
   };
 
   return (
-    <div 
-      className={`recommendation-card ${selected ? 'selected' : ''}`}
+    <div
+      className={`${styles['recommendation-card']} ${selected ? styles['selected'] : ''}`}
       onClick={onSelect}
     >
       {/* 排名徽章 */}
-      <div className="rank-badge">#{rank}</div>
+      <div className={styles['rank-badge']}>#{rank}</div>
 
       {/* 节点信息 */}
-      <div className="node-info">
-        <div className="node-header">
-          <span className="node-type">{recommendation.nodeType}</span>
-          <span className={`score-badge ${getScoreColor(recommendation.score)}`}>
+      <div className={styles['node-info']}>
+        <div className={styles['node-header']}>
+          <span className={styles['node-type']}>{recommendation.nodeType}</span>
+          <span
+            className={`${styles['score-badge']} ${styles[getScoreColor(recommendation.score)]}`}
+          >
             {scorePercent}%
           </span>
         </div>
 
         {/* 推荐原因 */}
         {recommendation.reason && (
-          <p className="reason">{recommendation.reason}</p>
+          <p className={styles['reason']}>{recommendation.reason}</p>
         )}
 
         {/* 分类标签 */}
         {recommendation.metadata?.category && (
-          <span className="category-tag">
+          <span className={styles['category-tag']}>
             {recommendation.metadata.category}
           </span>
         )}
       </div>
 
       {/* 操作按钮 */}
-      <div className="card-actions">
+      <div className={styles['card-actions']}>
         <button
-          className="dismiss-button"
-          onClick={(e) => {
+          className={styles['dismiss-button']}
+          onClick={e => {
             e.stopPropagation();
             onDismiss();
           }}
@@ -267,8 +288,8 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
       {/* 加载指示器 */}
       {selected && (
-        <div className="card-loading">
-          <div className="spinner-small"></div>
+        <div className={styles['card-loading']}>
+          <div className={styles['spinner-small']}></div>
         </div>
       )}
     </div>

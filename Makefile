@@ -47,7 +47,7 @@ build_server:
 
 sync_db: env
 	@echo "Syncing database..."
-	@docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile mysql-setup up -d
+	@docker-compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile mysql-setup up -d
 
 dump_db: env dump_sql_schema
 	@echo "Dumping database..."
@@ -56,15 +56,15 @@ dump_db: env dump_sql_schema
 
 sql_init:
 	@echo "Init sql data..."
-	@docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile mysql-setup up -d
+	@docker-compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile mysql-setup up -d
 
 middleware:
 	@echo "Start middleware docker environment for opencoze app"
-	@docker compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile middleware up -d --wait
+	@docker-compose -f $(COMPOSE_FILE) --env-file $(ENV_FILE) --profile middleware up -d --wait
 
 build_docker:
 	@echo "Build docker image"
-	@docker compose -f $(COMPOSE_FILE) --profile build-server build
+	@docker-compose -f $(COMPOSE_FILE) --profile build-server build
 
 web_env:
 	@if [ ! -f "$(WEB_ENV_FILE)" ]; then \
@@ -74,15 +74,15 @@ web_env:
 
 web: web_env
 	@echo "Start web server in docker"
-	@docker compose -f docker/docker-compose.yml --env-file $(WEB_ENV_FILE) up -d
+	@docker-compose -f docker/docker-compose.yml --env-file $(WEB_ENV_FILE) up -d
 
 down_web:
 	@echo "Stop web server in docker"
-	@docker compose -f docker/docker-compose.yml --env-file $(WEB_ENV_FILE) down
+	@docker-compose -f docker/docker-compose.yml --env-file $(WEB_ENV_FILE) down
 
 down: env
 	@echo "Stop all docker containers"
-	@docker compose -f $(COMPOSE_FILE) --profile '*' down
+	@docker-compose -f $(COMPOSE_FILE) --profile '*' down
 
 clean: down
 	@echo "Remove docker containers and volumes data"
@@ -118,7 +118,7 @@ oceanbase_debug: oceanbase_env oceanbase_middleware_debug python oceanbase_serve
 
 oceanbase_middleware_debug:
 	@echo "Starting OceanBase debug middleware..."
-	@docker compose -f $(OCEANBASE_DEBUG_COMPOSE_FILE) --env-file $(ENV_FILE) --profile middleware up -d --wait
+	@docker-compose -f $(OCEANBASE_DEBUG_COMPOSE_FILE) --env-file $(ENV_FILE) --profile middleware up -d --wait
 
 oceanbase_server_debug:
 	@if [ ! -d "$(STATIC_DIR)" ]; then \
