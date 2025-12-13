@@ -16,11 +16,15 @@
 
 import { useCallback } from 'react';
 
-import { Tooltip, IconButton } from '@coze-arch/coze-design';
-import { IconCozLightbulb } from '@coze-arch/coze-design/icons';
 import { useService } from '@flowgram-adapter/free-layout-editor';
-import { WorkflowSelectService } from '@flowgram-adapter/free-layout-editor';
+import {
+  WorkflowSelectService,
+  PlaygroundConfigEntity,
+} from '@flowgram-adapter/free-layout-editor';
+import { IconCozLightbulb } from '@coze-arch/coze-design/icons';
+import { Tooltip, IconButton } from '@coze-arch/coze-design';
 
+import { WorkflowEditService } from '@/services';
 import { useFloatLayoutService, useGlobalState } from '@/hooks';
 import { LayoutPanelKey } from '@/constants';
 
@@ -31,15 +35,51 @@ import { LayoutPanelKey } from '@/constants';
 export const RecommendationButton = () => {
   const floatLayoutService = useFloatLayoutService();
   const selectService = useService(WorkflowSelectService);
+  const editService = useService<WorkflowEditService>(WorkflowEditService);
+  const playgroundConfig = useService(PlaygroundConfigEntity);
   const { workflowId } = useGlobalState();
 
   const handleClick = useCallback(() => {
     // 获取当前选中的节点
     const selectedNode = selectService.activatedNode;
 
+    // 添加节点的回调函数
+    const handleAddNode = async (nodeType: string) => {
+      try {
+        // 获取选中节点的位置，在其下方添加新节点
+        let position = { clientX: 0, clientY: 0 };
+        const OFFSET_Y = 150;
+        if (selectedNode) {
+          const nodePosition = selectedNode.position;
+          // 在选中节点下方偏移
+          position = {
+            clientX: nodePosition.x,
+            clientY: nodePosition.y + OFFSET_Y,
+          };
+        } else {
+          // 如果没有选中节点，在画布中心添加
+          const { viewport } = playgroundConfig;
+          const HALF = 2;
+          position = {
+            clientX: viewport.x + viewport.width / HALF,
+            clientY: viewport.y + viewport.height / HALF,
+          };
+        }
+
+        // 调用 editService 添加节点
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await editService.addNode(nodeType as any, undefined, position, false);
+
+        console.log(`✅ 成功添加节点: ${nodeType}`);
+      } catch (error) {
+        console.error('添加节点失败:', error);
+        throw error;
+      }
+    };
+
     // 打开推荐面板
     floatLayoutService.open(LayoutPanelKey.NodeRecommendation, 'right', {
-      workflowId: workflowId,
+      workflowId,
       selectedNode: selectedNode
         ? {
             id: selectedNode.id,
@@ -47,8 +87,15 @@ export const RecommendationButton = () => {
             // 可以传递更多节点信息
           }
         : undefined,
+      onAddNode: handleAddNode,
     });
-  }, [floatLayoutService, selectService, workflowId]);
+  }, [
+    floatLayoutService,
+    selectService,
+    editService,
+    playgroundConfig,
+    workflowId,
+  ]);
 
   // 推荐功能在只读模式下也可用，因为它只是提供建议，不会修改工作流
   return (
