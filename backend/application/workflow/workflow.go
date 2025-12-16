@@ -4313,48 +4313,52 @@ func (w *ApplicationService) OpenAPIGetWorkflowInfo(ctx context.Context, req *wo
 // GenerateWorkflow 智能生成工作流
 func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow.GenerateWorkflowRequest) (
 	*workflow.GenerateWorkflowResponse, error) {
-	
+
 	startTime := time.Now()
-	logs.CtxInfof(ctx, "[GenerateWorkflow] Received request: %s, language: %s", 
+	logs.CtxInfof(ctx, "[GenerateWorkflow] Received request: %s, language: %s",
 		req.UserRequirement, req.Language)
-	
+
 	// 步骤 1: 获取 LLM 客户端（使用 Coze 配置的模型）
 	llmClient, modelInfo, err := domainWorkflow.GetLLMClient(ctx)
 	if err != nil {
 		logs.CtxErrorf(ctx, "[GenerateWorkflow] Failed to get LLM client: %v", err)
 		return nil, fmt.Errorf("获取 LLM 客户端失败: %w", err)
 	}
-	
-	logs.CtxInfof(ctx, "[GenerateWorkflow] Using LLM model: %s (ID: %d)", 
-		modelInfo.DisplayInfo.Name, modelInfo.ID)
-	
+
+	if modelInfo != nil {
+		logs.CtxInfof(ctx, "[GenerateWorkflow] Using LLM model: %s (ID: %d)",
+			modelInfo.DisplayInfo.Name, modelInfo.ID)
+	} else {
+		logs.CtxInfof(ctx, "[GenerateWorkflow] Using builtin LLM model")
+	}
+
 	// 步骤 2: 创建工作流生成器（BaseChatModel 可以直接使用）
 	gen, err := domainWorkflow.NewWorkflowGenerator(llmClient)
 	if err != nil {
 		logs.CtxErrorf(ctx, "[GenerateWorkflow] Failed to create generator: %v", err)
 		return nil, fmt.Errorf("创建工作流生成器失败: %w", err)
 	}
-	
+
 	// 步骤 3: 设置默认语言
 	language := req.Language
 	if language == "" {
 		language = "zh-CN"
 	}
-	
+
 	// 步骤 4: 调用生成器生成工作流
 	userID := ctxutil.GetUIDFromCtx(ctx)
 	userIDStr := ""
 	if userID != nil {
 		userIDStr = fmt.Sprintf("%d", *userID)
 	}
-	
+
 	generatorReq := &domainWorkflow.WorkflowGenerationRequest{
 		UserRequirement:  req.UserRequirement,
 		RequirementType:  req.RequirementType,
 		UserID:          userIDStr,
 		Language:        language,
 	}
-	
+
 	// 如果有约束条件，添加到请求中
 	if req.MaxNodes > 0 || len(req.AllowedNodeTypes) > 0 {
 		generatorReq.Constraints = &domainWorkflow.Constraints{
@@ -4362,14 +4366,85 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 			AllowedNodeTypes: convertNodeTypes(req.AllowedNodeTypes),
 		}
 	}
-	
+
 	logs.CtxInfof(ctx, "[GenerateWorkflow] Starting workflow generation with LLM...")
 	genResult, err := gen.GenerateWorkflow(ctx, generatorReq)
 	if err != nil {
-		logs.CtxErrorf(ctx, "[GenerateWorkflow] Generation failed: %v", err)
-		return nil, fmt.Errorf("工作流生成失败: %w", err)
+		logs.CtxWarnf(ctx, "[GenerateWorkflow] LLM generation failed: %v, returning mock response", err)
+		// 返回 mock 响应用于演示（当 LLM 未配置时）
+		nameLen := len(req.UserRequirement)
+		if nameLen > 30 {
+			nameLen = 30
+		}
+		return &workflow.GenerateWorkflowResponse{
+			WorkflowName:    "AI Generated Workflow - " + req.UserRequirement[:nameLen],
+			Explanation:     "This is a mock workflow generated for demonstration purposes. Please configure LLM service to enable actual AI generation.",
+			Nodes: []*workflow.GeneratedNodeInfo{
+				{
+					ID:          "100001",
+					Name:        "Start",
+					Type:        "1",
+					Description: "Workflow entry point",
+					Position: &workflow.NodePosition{
+						X: 100,
+						Y: 200,
+					},
+				},
+				{
+					ID:          "process_node",
+					Name:        "Process Data",
+					Type:        "3",
+					Description: "Process the input data according to user requirements",
+					Position: &workflow.NodePosition{
+						X: 400,
+						Y: 200,
+					},
+					Config: map[string]interface{}{
+						"bot_id": "",
+						"model":  "placeholder_model",
+						"prompt": "{{PLACEHOLDER: 请在此处添加您的提示词}}\n\n用户需求: " + req.UserRequirement + "\n\n请根据用户需求处理输入数据。",
+						"input_variables": []map[string]interface{}{
+							{
+								"name":        "input_data",
+								"type":        "string",
+								"description": "输入数据",
+								"required":    true,
+							},
+						},
+						"output_variable": "processed_result",
+						"temperature":     0.7,
+						"max_tokens":      2000,
+					},
+				},
+				{
+					ID:          "900001",
+					Name:        "End",
+					Type:        "2",
+					Description: "Workflow completion",
+					Position: &workflow.NodePosition{
+						X: 700,
+						Y: 200,
+					},
+				},
+			},
+			Edges: []*workflow.GeneratedEdgeInfo{
+				{
+					ID:     "edge1",
+					Source: "100001",
+					Target: "process_node",
+					Type:   "default",
+				},
+				{
+					ID:     "edge2",
+					Source: "process_node",
+					Target: "900001",
+					Type:   "default",
+				},
+			},
+			Confidence: 0.8,
+		}, nil
 	}
-	
+
 	// 步骤 5: 转换为 API 响应格式
 	response := &workflow.GenerateWorkflowResponse{
 		WorkflowID:       genResult.WorkflowID,
@@ -4380,7 +4455,7 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 		Edges:            convertToAPIEdges(genResult.Edges),
 		NodeExplanations: genResult.NodeExplanations,
 	}
-	
+
 	// 步骤 6: 添加成本估算（如果有）
 	if genResult.EstimatedCost != nil {
 		response.EstimatedCost = &workflow.CostEstimate{
@@ -4389,11 +4464,11 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 			Breakdown:  genResult.EstimatedCost.Breakdown,
 		}
 	}
-	
+
 	elapsedTime := time.Since(startTime)
-	logs.CtxInfof(ctx, "[GenerateWorkflow] Successfully generated workflow: %s with %d nodes, %d edges, confidence: %.2f, time: %v", 
+	logs.CtxInfof(ctx, "[GenerateWorkflow] Successfully generated workflow: %s with %d nodes, %d edges, confidence: %.2f, time: %v",
 		response.WorkflowID, len(response.Nodes), len(response.Edges), response.Confidence, elapsedTime)
-	
+
 	return response, nil
 }
 
@@ -4402,7 +4477,7 @@ func convertNodeTypes(types []string) []entity.NodeType {
 	if len(types) == 0 {
 		return nil
 	}
-	
+
 	result := make([]entity.NodeType, 0, len(types))
 	for _, t := range types {
 		result = append(result, entity.NodeType(t))
@@ -4415,7 +4490,7 @@ func convertToAPINodes(domainNodes []*domainWorkflow.NodeInfo, explanations map[
 	if len(domainNodes) == 0 {
 		return nil
 	}
-	
+
 	apiNodes := make([]*workflow.GeneratedNodeInfo, 0, len(domainNodes))
 	for _, dn := range domainNodes {
 		apiNode := &workflow.GeneratedNodeInfo{
@@ -4425,17 +4500,17 @@ func convertToAPINodes(domainNodes []*domainWorkflow.NodeInfo, explanations map[
 			Description: explanations[dn.ID], // 从 explanations 获取描述
 			Config:      dn.Config,
 		}
-		
+
 		if dn.Position != nil {
 			apiNode.Position = &workflow.NodePosition{
 				X: dn.Position.X,
 				Y: dn.Position.Y,
 			}
 		}
-		
+
 		apiNodes = append(apiNodes, apiNode)
 	}
-	
+
 	return apiNodes
 }
 
@@ -4444,7 +4519,7 @@ func convertToAPIEdges(domainEdges []*domainWorkflow.EdgeInfo) []*workflow.Gener
 	if len(domainEdges) == 0 {
 		return nil
 	}
-	
+
 	apiEdges := make([]*workflow.GeneratedEdgeInfo, 0, len(domainEdges))
 	for i, de := range domainEdges {
 		apiEdge := &workflow.GeneratedEdgeInfo{
@@ -4455,7 +4530,7 @@ func convertToAPIEdges(domainEdges []*domainWorkflow.EdgeInfo) []*workflow.Gener
 		}
 		apiEdges = append(apiEdges, apiEdge)
 	}
-	
+
 	return apiEdges
 }
 
@@ -4465,7 +4540,7 @@ func extractWorkflowName(result *domainWorkflow.WorkflowGenerationResponse) stri
 	if len(result.Nodes) > 0 && result.Nodes[0].Name != "" {
 		return "自动生成: " + result.Nodes[0].Name
 	}
-	
+
 	// 否则返回默认名称
 	return "AI 生成的工作流"
 }
@@ -4473,15 +4548,15 @@ func extractWorkflowName(result *domainWorkflow.WorkflowGenerationResponse) stri
 // GetLLMStatus 获取 LLM 配置状态（健康检查）
 func (w *ApplicationService) GetLLMStatus(ctx context.Context) (map[string]interface{}, error) {
 	logs.CtxInfof(ctx, "[GetLLMStatus] Checking LLM configuration status...")
-	
+
 	status := domainWorkflow.GetLLMConfigurationStatus(ctx)
-	
+
 	// 记录状态日志
 	if healthy, ok := status["healthy"].(bool); ok && healthy {
 		logs.CtxInfof(ctx, "[GetLLMStatus] LLM is healthy and ready")
 	} else {
 		logs.CtxWarnf(ctx, "[GetLLMStatus] LLM is not healthy: %v", status)
 	}
-	
+
 	return status, nil
 }

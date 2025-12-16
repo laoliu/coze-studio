@@ -113,7 +113,7 @@ func LoadConfig(configPath string) (*Config, error) {
 			return
 		}
 
-		logs.Infof("Workflow generator config loaded successfully, enabled: %v, model_id: %d", 
+		logs.Infof("Workflow generator config loaded successfully, enabled: %v, model_id: %d",
 			config.WorkflowGenerator.Enabled, config.WorkflowGenerator.ModelID)
 	})
 
@@ -124,7 +124,7 @@ func LoadConfig(configPath string) (*Config, error) {
 func GetConfig() *Config {
 	if config == nil {
 		// 尝试加载默认配置
-		defaultPath := "backend/conf/workflow/llm_config.yaml"
+		defaultPath := "resources/conf/workflow/llm_config.yaml"
 		cfg, err := LoadConfig(defaultPath)
 		if err != nil {
 			logs.Errorf("Failed to load config from %s: %v", defaultPath, err)
@@ -178,7 +178,7 @@ func getDefaultConfig() *Config {
 // GetLLMClient 获取 LLM 客户端（使用 Coze Studio 现有的模型管理系统）
 func GetLLMClient(ctx context.Context) (model.BaseChatModel, *modelmgr.Model, error) {
 	cfg := GetConfig()
-	
+
 	if !cfg.WorkflowGenerator.Enabled {
 		return nil, nil, fmt.Errorf("workflow generator is disabled in configuration")
 	}
@@ -207,10 +207,10 @@ func GetLLMClient(ctx context.Context) (model.BaseChatModel, *modelmgr.Model, er
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get builtin chat model: %w", err)
 		}
-		if !configured {
-			return nil, nil, fmt.Errorf("no builtin model configured")
+		if !configured || chatModel == nil {
+			return nil, nil, fmt.Errorf("no builtin model configured or chat model is nil")
 		}
-		
+
 		// 获取模型信息（builtin 模型可能没有详细的 modelInfo）
 		// 这里返回 nil 也是可以的，generator 可以处理
 		return chatModel, nil, nil

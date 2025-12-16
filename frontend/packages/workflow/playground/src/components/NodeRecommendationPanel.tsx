@@ -120,6 +120,10 @@ export const NodeRecommendationPanel: React.FC<
         console.warn('⚠️ onAddNode 回调未定义');
       }
 
+      // TODO: 在这里添加自动连接逻辑
+      // 等待节点添加完成后，创建从 selectedNode 到新节点的连接
+      console.log('🔗 TODO: 创建自动连接');
+
       // 提交反馈
       console.log('📤 提交反馈...');
       await submitFeedback(recommendation.nodeType, 'selected');

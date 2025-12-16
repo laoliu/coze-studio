@@ -40,10 +40,12 @@ import { EmptyState, Input } from '@coze-arch/coze-design';
 import {
   type WorkflowNodeEntity,
   useService,
+  type WorkflowLinePortInfo,
 } from '@flowgram-adapter/free-layout-editor';
 
 import { type UnionNodeTemplate } from '@/typing';
 import { WorkflowPlaygroundContext } from '@/workflow-playground-context';
+import type { WorkflowLineService } from '@/services/workflow-line-service';
 
 import { NodePanelContextProvider } from '../hooks/node-panel-context';
 import { RecommendationSection } from './recommendation-section';
@@ -82,17 +84,17 @@ export const NodeList = forwardRef<NodeListRefType, NodesContainerProps>(
       adaptiveHeight,
       onAddingNode,
     } = props;
-    
+
     // 获取工作流上下文（用于推荐）
     const context = useService<WorkflowPlaygroundContext>(
       WorkflowPlaygroundContext,
     );
-    
+
     const nodeCategoryList = useTemplateNodeList(containerNode);
     const nodeListRef = useRef<HTMLDivElement>();
     const [showBorder, setShowBorder] = useState(false);
     const [input, setInput] = useState('');
-    
+
     // 推荐相关状态
     const [showRecommendation, setShowRecommendation] = useState(false);
     const [sourceNodeInfo, setSourceNodeInfo] = useState<{
@@ -146,23 +148,124 @@ export const NodeList = forwardRef<NodeListRefType, NodesContainerProps>(
     // 处理推荐节点选择
     const handleSelectRecommendation = useCallback(
       async (nodeType: string) => {
+        console.log(
+          '[Recommendation] handleSelectRecommendation called with nodeType:',
+          nodeType,
+        );
         setShowRecommendation(false);
-        
-        // 创建一个 mock 事件
-        const mockEvent = {
+
+        if (!containerNode) {
+          console.warn('[Recommendation] No container node available');
+          return;
+        }
+
+        console.log(
+          '[Recommendation] Container node:',
+          containerNode.id,
+          containerNode.type,
+        );
+
+        // 创建一个简单的 mock 事件
+        const mockEvent: MouseEventType = {
           type: 'click',
-          currentTarget: null,
-          target: null,
-        } as any;
-        
+          clientX: 0,
+          clientY: 0,
+        };
+
+        // 调用原始的 onSelect 来添加节点
+        const nodeTemplate: UnionNodeTemplate = {
+          type: nodeType,
+        };
+
+        console.log('[Recommendation] Calling onSelect to add node...');
         await onSelect({
           event: mockEvent,
-          nodeTemplate: {
-            type: nodeType,
-          } as UnionNodeTemplate,
+          nodeTemplate,
         });
+        console.log('[Recommendation] onSelect completed');
+
+        // 节点添加后，我们需要创建连接
+        // 延迟一下确保节点已经被添加到画布
+        const CONNECTION_DELAY_MS = 100;
+        console.log(
+          '[Recommendation] Setting up setTimeout for connection creation',
+        );
+        setTimeout(() => {
+          console.log('[Recommendation] setTimeout callback executing');
+          try {
+            // 获取 workflow-line-service 来创建连接
+            const lineService = context.container.get<WorkflowLineService>(
+              'WorkflowLineService',
+            );
+            console.log('[Recommendation] Got lineService:', !!lineService);
+
+            // 获取刚添加的节点（应该是最新添加的）
+            const allNodes = context.entityManager
+              ?.getAllEntities()
+              .filter((e: WorkflowNodeEntity) => e.type === nodeType);
+
+            console.log(
+              '[Recommendation] All nodes of type',
+              nodeType,
+              ':',
+              allNodes?.length,
+            );
+
+            if (!allNodes || allNodes.length === 0) {
+              console.warn('[Recommendation] Could not find newly added node');
+              return;
+            }
+
+            // 取最后一个（最新添加的）
+            const newNode = allNodes[allNodes.length - 1];
+            console.log('[Recommendation] New node:', newNode.id, newNode.type);
+
+            // 获取 containerNode 的输出端口
+            const sourceOutputPorts = containerNode.ports.filter(
+              p => p.direction === 'output',
+            );
+            console.log(
+              '[Recommendation] Source output ports:',
+              sourceOutputPorts.length,
+            );
+
+            // 获取新节点的输入端口
+            const targetInputPorts = newNode.ports.filter(
+              p => p.direction === 'input',
+            );
+            console.log(
+              '[Recommendation] Target input ports:',
+              targetInputPorts.length,
+            );
+
+            if (
+              sourceOutputPorts.length === 0 ||
+              targetInputPorts.length === 0
+            ) {
+              console.warn('[Recommendation] No valid ports for connection');
+              return;
+            }
+
+            // 创建连接：从 containerNode 的第一个输出端口到新节点的第一个输入端口
+            const lineInfo: WorkflowLinePortInfo = {
+              from: containerNode.id,
+              fromPort: sourceOutputPorts[0].id,
+              to: newNode.id,
+              toPort: targetInputPorts[0].id,
+            };
+            console.log('[Recommendation] Creating line with info:', lineInfo);
+            lineService?.createLine(lineInfo);
+
+            console.log('[Recommendation] Successfully created connection');
+          } catch (error) {
+            console.error(
+              '[Recommendation] Failed to create connection:',
+              error,
+            );
+          }
+        }, CONNECTION_DELAY_MS); // 延迟100ms确保节点已添加
       },
-      [onSelect]
+      [onSelect, containerNode, context],
     );
 
     // 当 containerNode 变化时，更新推荐源节点

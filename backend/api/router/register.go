@@ -95,11 +95,18 @@ func staticFileRegister(r *server.Hertz) {
 
 // registerRecommendationRoutes 注册节点推荐路由
 func registerRecommendationRoutes(r *server.Hertz) {
-	api := r.Group("/api/workflow_api/node")
+	nodeAPI := r.Group("/api/workflow_api/node")
 	{
-		api.POST("/recommend", cozeHandler.GetNodeRecommendations)
-		api.POST("/recommend/feedback", cozeHandler.RecordNodeFeedback)
+		nodeAPI.POST("/recommend", cozeHandler.GetNodeRecommendations)
+		nodeAPI.POST("/recommend/feedback", cozeHandler.RecordNodeFeedback)
 	}
 
-	logs.Infof("Node recommendation routes registered")
+	// 注册工作流生成路由
+	workflowAPI := r.Group("/api/workflow_api")
+	{
+		workflowAPI.POST("/generate", cozeHandler.GenerateWorkflow)
+		workflowAPI.GET("/llm_status", cozeHandler.GetLLMStatus)
+	}
+
+	logs.Infof("Workflow API routes registered (node recommendation + workflow generation)")
 }

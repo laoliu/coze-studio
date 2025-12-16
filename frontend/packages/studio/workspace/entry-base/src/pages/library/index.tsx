@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 
 import classNames from 'classnames';
 import { useInfiniteScroll } from 'ahooks';
@@ -48,6 +48,7 @@ import {
   getStatusOptions,
   LIBRARY_PAGE_SIZE,
 } from './consts';
+import { WorkflowGeneratorModal } from './components/workflow-generator-modal';
 import { LibraryHeader } from './components/library-header';
 
 import s from './index.module.less';
@@ -65,8 +66,10 @@ export const BaseLibraryPage = forwardRef<
   { reloadList: () => void },
   BaseLibraryPageProps
 >(
-  // eslint-disable-next-line @coze-arch/max-line-per-function
+  // eslint-disable-next-line @coze-arch/max-line-per-function -- Complex component logic
   ({ spaceId, isPersonalSpace = true, entityConfigs }, ref) => {
+    const [showWorkflowGenerator, setShowWorkflowGenerator] = useState(false);
+
     const { params, setParams, resetParams, hasFilter, ready } =
       useCachedQueryParams({
         spaceId,
@@ -128,7 +131,10 @@ export const BaseLibraryPage = forwardRef<
       >
         <Layout.Header className={classNames(s['layout-header'], 'pb-0')}>
           <div className="w-full">
-            <LibraryHeader entityConfigs={entityConfigs} />
+            <LibraryHeader
+              entityConfigs={entityConfigs}
+              onOpenWorkflowGenerator={() => setShowWorkflowGenerator(true)}
+            />
             <div className="flex items-center justify-between">
               <Space>
                 <Cascader
@@ -293,6 +299,12 @@ export const BaseLibraryPage = forwardRef<
             onLoad={listResp.loadMore}
           />
         </Layout.Content>
+
+        <WorkflowGeneratorModal
+          visible={showWorkflowGenerator}
+          spaceId={spaceId}
+          onClose={() => setShowWorkflowGenerator(false)}
+        />
       </Layout>
     );
   },

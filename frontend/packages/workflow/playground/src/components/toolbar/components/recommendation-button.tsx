@@ -236,6 +236,91 @@ export const RecommendationButton = () => {
 
         if (addedNode) {
           console.log(`🎉 成功添加节点: ${nodeType}`, addedNode);
+
+          // 尝试创建自动连接
+          try {
+            const sourceNode = selectService.activatedNode;
+            if (sourceNode && addedNode.id) {
+              console.log('🔗 尝试创建自动连接...');
+              console.log('  - 源节点:', sourceNode.id, sourceNode.type);
+              console.log('  - 目标节点:', addedNode.id, addedNode.type);
+
+              // 获取 workflowDocument 来访问 linesManager
+              const workflowDocument = (editService as any).workflowDocument;
+              console.log('  - workflowDocument:', !!workflowDocument);
+              console.log(
+                '  - linesManager:',
+                !!workflowDocument?.linesManager,
+              );
+              console.log(
+                '  - nodesManager:',
+                !!workflowDocument?.nodesManager,
+              );
+
+              if (
+                workflowDocument &&
+                workflowDocument.linesManager &&
+                workflowDocument.nodesManager
+              ) {
+                // 获取源节点实体（包含 ports）
+                const sourceNodeEntity = workflowDocument.nodesManager.getById(
+                  sourceNode.id,
+                );
+                const targetNodeEntity = workflowDocument.nodesManager.getById(
+                  addedNode.id,
+                );
+
+                if (sourceNodeEntity && targetNodeEntity) {
+                  // 获取端口
+                  const sourceOutputPorts = sourceNodeEntity.ports.filter(
+                    (p: any) => p.direction === 'output',
+                  );
+                  const targetInputPorts = targetNodeEntity.ports.filter(
+                    (p: any) => p.direction === 'input',
+                  );
+
+                  console.log(
+                    '  - 源节点输出端口数:',
+                    sourceOutputPorts?.length,
+                  );
+                  console.log(
+                    '  - 目标节点输入端口数:',
+                    targetInputPorts?.length,
+                  );
+
+                  if (
+                    sourceOutputPorts?.length > 0 &&
+                    targetInputPorts?.length > 0
+                  ) {
+                    // 创建连接
+                    const lineInfo = {
+                      from: sourceNode.id,
+                      fromPort: sourceOutputPorts[0].id,
+                      to: addedNode.id,
+                      toPort: targetInputPorts[0].id,
+                    };
+
+                    console.log('  - 连接信息:', lineInfo);
+
+                    // 使用 linesManager 创建连接
+                    workflowDocument.linesManager.createLine(lineInfo);
+                    console.log('✅ 自动连接创建成功!');
+                  } else {
+                    console.warn('⚠️ 无法创建连接：端口不足');
+                  }
+                } else {
+                  console.warn('⚠️ 无法获取节点实体');
+                }
+              } else {
+                console.warn('⚠️ 无法获取 workflowDocument 或 linesManager');
+              }
+            } else {
+              console.warn('⚠️ 无法创建连接：缺少源节点或新节点ID');
+            }
+          } catch (connectionError) {
+            console.error('❌ 创建连接失败:', connectionError);
+            // 不抛出错误，因为节点已经添加成功
+          }
         } else {
           console.warn(
             `⚠️ 添加节点返回空: ${nodeType}，可能节点类型不支持或需要额外配置`,

@@ -19,23 +19,38 @@ import path from 'path';
 import { defineConfig } from '@coze-arch/rsbuild-config';
 import { GLOBAL_ENVS } from '@coze-arch/bot-env';
 
+// 统一使用 8888 端口（本地开发）
+// 这样确保所有 API 请求都到同一个后端实例，共享 session
 const API_PROXY_TARGET = `http://localhost:${
   process.env.WEB_SERVER_PORT || 8888
 }/`;
 
 // 推荐服务代理目标（开发环境）
-const RECOMMENDATION_SERVICE_TARGET = process.env.RECOMMENDATION_SERVICE_URL || 'http://localhost:8080';
+// 开发环境下，后端运行在 8888 端口（本地开发）
+const RECOMMENDATION_SERVICE_TARGET = process.env.RECOMMENDATION_SERVICE_URL || 'http://localhost:8888';
 
 const mergedConfig = defineConfig({
+  dev: {
+    hmr: {
+      port: 8889,
+      host: 'localhost',
+    },
+  },
   server: {
+    port: 8889,
+    host: 'localhost',
     strictPort: true,
     proxy: [
-      // 推荐服务 API 代理（优先级最高，放在最前面）
+      // 推荐服务和工作流生成 API 代理（优先级最高，放在最前面）
       {
-        context: ['/api/recommend', '/api/feedback'],
+        context: ['/api/recommend', '/api/feedback', '/api/workflow_api'],
         target: RECOMMENDATION_SERVICE_TARGET,
         secure: false,
         changeOrigin: true,
+        // 确保 cookies 被正确转发
+        cookieDomainRewrite: {
+          '*': 'localhost',
+        },
         onProxyReq: (proxyReq, req, res) => {
           console.log(
             '[Recommendation Proxy]',
@@ -43,6 +58,8 @@ const mergedConfig = defineConfig({
             req.url,
             '→',
             RECOMMENDATION_SERVICE_TARGET,
+            'Cookies:',
+            req.headers.cookie ? '✓' : '✗',
           );
         },
       },

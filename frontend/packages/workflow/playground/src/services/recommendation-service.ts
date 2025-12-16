@@ -46,6 +46,7 @@ export class RecommendationService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // 发送 cookies
       body: JSON.stringify({
         workflow_id: params.workflowId,
         source_node_id: params.sourceNodeId,
@@ -140,6 +141,7 @@ export class RecommendationService {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // 发送 cookies
       body: JSON.stringify({
         request_id: params.requestId,
         selected_node: params.selectedNode,

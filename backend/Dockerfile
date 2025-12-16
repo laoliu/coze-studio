@@ -62,6 +62,9 @@ COPY backend/infra/document/parser/impl/builtin/parse_pdf.py /app/parse_pdf.py
 COPY backend/infra/document/parser/impl/builtin/parse_docx.py /app/parse_docx.py
 COPY backend/infra/coderunner/impl/script/sandbox.py /app/sandbox.py
 
+# Copy recommendation rules
+COPY backend/domain/workflow/recommendation/rules.yaml /app/rules.yaml
+
 
 # Copy static resources
 # COPY backend/static /app/resources/static/
