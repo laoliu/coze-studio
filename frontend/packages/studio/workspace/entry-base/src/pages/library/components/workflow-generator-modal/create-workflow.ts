@@ -30,6 +30,14 @@ interface GeneratedEdge {
   type: string;
 }
 
+// Frontend edge format (what the canvas expects)
+interface FrontendEdge {
+  sourceNodeID: string;
+  targetNodeID: string;
+  sourcePortID?: string;
+  targetPortID?: string;
+}
+
 const AUTH_FAILED_CODE = 700012006;
 
 interface CreateWorkflowApiResponse {
@@ -93,11 +101,22 @@ const saveWorkflowCanvas = async (params: {
   nodes: GeneratedNode[];
   edges: GeneratedEdge[];
 }) => {
-  // Create schema object with nodes and edges
+  // Convert backend edge format to frontend edge format
+  const frontendEdges: FrontendEdge[] = params.edges.map(edge => ({
+    sourceNodeID: edge.source,
+    targetNodeID: edge.target,
+  }));
+
+  console.log('[saveWorkflowCanvas] Backend edges:', params.edges);
+  console.log('[saveWorkflowCanvas] Frontend edges:', frontendEdges);
+
+  // Create schema object with nodes and edges in frontend format
   const schema = {
     nodes: params.nodes,
-    edges: params.edges,
+    edges: frontendEdges,
   };
+
+  console.log('[saveWorkflowCanvas] Schema to save:', JSON.stringify(schema, null, 2));
 
   const response = await fetch('/api/workflow_api/save', {
     method: 'POST',
