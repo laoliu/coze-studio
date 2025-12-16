@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package generator
 
 import (
@@ -156,7 +172,7 @@ const workflowGenerationPromptTemplate = `你是工作流设计专家，请设�
       "position": {"x": 100, "y": 250},
       "config": {
         "model": "gpt-4",
-        "prompt": "请根据以下课程主题生成详细的课程大纲，包含至少5个章节，每个章节包含标题和要点。\\n\\n课程主题: {{course_topic}}\\n\\n请以 JSON 格式输出，结构如下：\\n{\\\"chapters\\\": [{\\\"title\\\": \\\"章节标题\\\", \\\"points\\\": [\\\"要点1\\\", \\\"要点2\\\"]}]}",
+        "prompt": "请根据以下课程主题生成详细的课程大纲，包含至少5个章节，每个章节包含标题和要点。\\n\\n课程主题: {{"{{"}}course_topic{{"}}"}}\\n\\n请以 JSON 格式输出，结构如下：\\n{\\\"chapters\\\": [{\\\"title\\\": \\\"章节标题\\\", \\\"points\\\": [\\\"要点1\\\", \\\"要点2\\\"]}]}",
         "output_format": "json",
         "temperature": 0.7
       },

@@ -5,55 +5,56 @@
 workflow_generator:
   # 是否启用智能工作流生成功能
   enabled: true
-  
+
   # 使用的模型 ID（从 Coze Studio 已配置的模型中选择）
   # 留空则使用 builtin 模型或系统默认模型
-  model_id: 0
-  
+  # 测试模型: 100002, 100003, 100004, 100005
+  model_id: 100002
+
   # 生成配置
   generation:
     # 温度参数 (0.0 - 2.0)，控制生成的随机性
     temperature: 0.7
-    
+
     # 最大 Token 数
     max_tokens: 2000
-    
+
     # 请求超时时间（秒）
     timeout: 45
-  
+
   # 缓存配置
   cache:
     # 是否启用意图分析缓存
     enable_intent_cache: true
-    
+
     # 缓存过期时间（分钟）
     cache_ttl: 60
-  
+
   # 重试配置
   retry:
     # 最大重试次数
     max_retries: 3
-    
+
     # 重试间隔（秒）
     retry_interval: 2
-  
+
   # 质量控制
   quality:
     # 置信度阈值（低于此值会提示用户重新描述）
     confidence_threshold: 0.6
-    
+
     # 是否启用结果验证
     enable_validation: true
-  
+
   # 布局配置
   layout:
     # 是否启用自动布局
     enable_auto_layout: true
-    
+
     # 节点间距（像素）
     node_spacing_x: 200
     node_spacing_y: 100
-    
+
     # 起始位置
     start_x: 100
     start_y: 100
@@ -62,10 +63,10 @@ workflow_generator:
 template_matching:
   # 最大返回模板数量
   max_results: 3
-  
+
   # 相似度阈值
   similarity_threshold: 0.5
-  
+
   # 是否启用模板推荐
   enable_recommendation: true
 

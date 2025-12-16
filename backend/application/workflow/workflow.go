@@ -4387,7 +4387,7 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 					Description: "Workflow entry point",
 					Position: &workflow.NodePosition{
 						X: 100,
-						Y: 200,
+						Y: 300,
 					},
 				},
 				{
@@ -4396,8 +4396,8 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 					Type:        "3",
 					Description: "Process the input data according to user requirements",
 					Position: &workflow.NodePosition{
-						X: 400,
-						Y: 200,
+						X: 500,
+						Y: 300,
 					},
 					Config: map[string]interface{}{
 						"bot_id": "",
@@ -4422,8 +4422,8 @@ func (w *ApplicationService) GenerateWorkflow(ctx context.Context, req *workflow
 					Type:        "2",
 					Description: "Workflow completion",
 					Position: &workflow.NodePosition{
-						X: 700,
-						Y: 200,
+						X: 900,
+						Y: 300,
 					},
 				},
 			},
@@ -4485,6 +4485,678 @@ func convertNodeTypes(types []string) []entity.NodeType {
 	return result
 }
 
+// mapNodeTypeToNumber 将节点类型字符串映射为数字字符串
+func mapNodeTypeToNumber(nodeType string) string {
+	typeMap := map[string]string{
+		"Start":              "1",
+		"End":                "2",
+		"LLM":                "3",
+		"Api":                "4",
+		"Plugin":             "4",  // Plugin 也映射为 4
+		"Code":               "5",
+		"Dataset":            "6",
+		"Knowledge":          "6",  // Knowledge 也映射为 6
+		"If":                 "8",
+		"SubWorkflow":        "9",
+		"Variable":           "11",
+		"Database":           "12",
+		"Message":            "13",
+		"Text":               "15",
+		"ImageGenerate":      "16",
+		"ImageReference":     "17",
+		"Question":           "18",
+		"QA":                 "18", // QA 也映射为 18
+		"Break":              "19",
+		"LoopSetVariable":    "20",
+		"Loop":               "21",
+		"Intent":             "22",
+		"DrawingBoard":       "23",
+		"SceneVariable":      "24",
+		"SceneChat":          "25",
+		"DatasetWrite":       "27",
+		"Batch":              "28",
+		"Continue":           "29",
+		"Input":              "30",
+		"MessageList":        "37",
+		"AssignVariable":     "40",
+		"ConversationList":   "53",
+		"CreateMessage":      "55",
+		"JsonSerialization":  "58",
+		"JsonDeserialization":"59",
+		"DatasetDelete":      "60",
+	}
+
+	if mappedType, ok := typeMap[nodeType]; ok {
+		return mappedType
+	}
+
+	// 如果没有映射，返回原值
+	return nodeType
+}
+
+// convertLLMConfigToVOFormat 将LLM生成的config转换为前端VO格式
+func convertLLMConfigToVOFormat(nodeType string, rawConfig map[string]interface{}) map[string]interface{} {
+	if rawConfig == nil {
+		return nil
+	}
+
+	voConfig := make(map[string]interface{})
+
+	switch nodeType {
+	case "1": // Start节点 (NodeType_Start)
+		// Start节点需要将inputs/inputParameters转换为outputs字段（Start节点的输入在前端表现为outputs）
+		var inputsList []interface{}
+		if inputs, ok := rawConfig["inputs"].([]interface{}); ok {
+			inputsList = inputs
+		} else if inputParams, ok := rawConfig["inputParameters"].([]interface{}); ok {
+			inputsList = inputParams
+		}
+
+		if len(inputsList) > 0 {
+			outputs := make([]map[string]interface{}, 0, len(inputsList))
+			for _, input := range inputsList {
+				if inputMap, ok := input.(map[string]interface{}); ok {
+					// Start节点的outputs是Variable类型（VariableMetaDTO格式）
+					variable := map[string]interface{}{
+						"name": inputMap["name"],
+					}
+
+					// 处理type字段 - 必须是前端认可的DTO类型
+					if typeVal, hasType := inputMap["type"]; hasType {
+						typeStr := fmt.Sprintf("%v", typeVal)
+						// 将常见类型名映射到DTO类型
+						switch typeStr {
+						case "string", "text":
+							variable["type"] = "string"
+						case "number", "float", "double":
+							variable["type"] = "float"
+						case "int", "integer":
+							variable["type"] = "integer"
+						case "bool", "boolean":
+							variable["type"] = "boolean"
+						case "object", "dict", "map":
+							variable["type"] = "object"
+						case "array", "list":
+							variable["type"] = "list"
+						case "image":
+							variable["type"] = "image"
+						default:
+							variable["type"] = "string" // 默认为string
+						}
+					} else {
+						variable["type"] = "string" // 没有type则默认string
+					}
+
+					if desc, hasDesc := inputMap["description"]; hasDesc {
+						variable["description"] = desc
+					}
+					outputs = append(outputs, variable)
+				}
+			}
+			voConfig["outputs"] = outputs
+		}
+
+		// 如果还是没有outputs，提供默认的
+		if voConfig["outputs"] == nil {
+			voConfig["outputs"] = []map[string]interface{}{
+				{
+					"name": "user_request",
+					"type": "string",
+				},
+			}
+		}
+
+	case "2": // End节点 (NodeType_End)
+		// End节点需要inputs.inputParameters字段
+		if outputs, ok := rawConfig["outputs"].([]interface{}); ok {
+			inputParams := make([]map[string]interface{}, 0, len(outputs))
+			for _, output := range outputs {
+				if outputMap, ok := output.(map[string]interface{}); ok {
+					// End节点的inputs.inputParameters是Param类型
+					param := map[string]interface{}{
+						"name": outputMap["name"],
+						"input": map[string]interface{}{
+							"type": outputMap["type"],
+							"value": map[string]interface{}{
+								"type":    "reference",
+								"content": outputMap["source"], // 引用来源
+							},
+						},
+					}
+					inputParams = append(inputParams, param)
+				}
+			}
+			// End节点的config需要嵌套在inputs下
+			voConfig["inputs"] = map[string]interface{}{
+				"inputParameters": inputParams,
+			}
+		}
+		if voConfig["inputs"] == nil {
+			// 提供默认的End节点配置
+			voConfig["inputs"] = map[string]interface{}{
+				"inputParameters": []map[string]interface{}{
+					{
+						"name": "result",
+						"input": map[string]interface{}{
+							"type": "string",
+							"value": map[string]interface{}{
+								"type":    "reference",
+								"content": "",
+							},
+						},
+					},
+				},
+			}
+		}
+
+	case "3": // LLM节点 (NodeType_LLM)
+		inputs := make(map[string]interface{})
+
+		// 构建LLM参数列表
+		llmParams := make([]map[string]interface{}, 0)
+		if prompt, ok := rawConfig["prompt"].(string); ok {
+			llmParams = append(llmParams, map[string]interface{}{
+				"name": "prompt",
+				"input": map[string]interface{}{
+					"type": "string",
+					"value": map[string]interface{}{
+						"type":    "literal",
+						"content": prompt,
+					},
+				},
+			})
+		}
+		if len(llmParams) > 0 {
+			inputs["llmParam"] = llmParams
+		}
+
+		// 模型配置
+		if model, ok := rawConfig["model"].(string); ok {
+			inputs["modelName"] = model
+		}
+		if temp := rawConfig["temperature"]; temp != nil {
+			inputs["temperature"] = temp
+		}
+		if maxTokens := rawConfig["max_tokens"]; maxTokens != nil {
+			inputs["maxTokens"] = maxTokens
+		}
+		if outputFormat, ok := rawConfig["output_format"].(string); ok {
+			// 转换为对应的数字格式
+			formatMap := map[string]int{"text": 0, "json": 1, "json_schema": 2}
+			if formatNum, exists := formatMap[outputFormat]; exists {
+				inputs["responseFormat"] = formatNum
+			}
+		}
+
+		// LLM节点也需要 inputParameters（即使为空）
+		if inputs["inputParameters"] == nil {
+			inputs["inputParameters"] = []map[string]interface{}{}
+		}
+
+		voConfig["inputs"] = inputs
+
+	case "4": // Api/Plugin节点 (NodeType_Api)
+		// API节点配置
+		if url, ok := rawConfig["url"].(string); ok {
+			voConfig["apiInfo"] = map[string]interface{}{
+				"url":    url,
+				"method": rawConfig["method"],
+			}
+		}
+		if params, ok := rawConfig["parameters"].([]interface{}); ok {
+			paramsList := make([]map[string]interface{}, 0, len(params))
+			for _, param := range params {
+				if paramMap, ok := param.(map[string]interface{}); ok {
+					paramsList = append(paramsList, paramMap)
+				}
+			}
+			voConfig["params"] = paramsList
+		}
+		if pluginID, ok := rawConfig["plugin_id"].(string); ok {
+			voConfig["pluginAPIParam"] = map[string]interface{}{
+				"pluginID": pluginID,
+			}
+		}
+
+	case "5": // Code节点 (NodeType_Code)
+		inputs := make(map[string]interface{})
+		if code, ok := rawConfig["code"].(string); ok {
+			inputs["code"] = code
+			// 语言类型: 1=Python, 2=JavaScript
+			if lang, ok := rawConfig["language"].(string); ok && lang == "javascript" {
+				inputs["language"] = 2
+			} else {
+				inputs["language"] = 1 // 默认Python
+			}
+		}
+
+		// Code节点也需要 inputParameters（即使为空）
+		if inputs["inputParameters"] == nil {
+			inputs["inputParameters"] = []map[string]interface{}{}
+		}
+
+		voConfig["inputs"] = inputs
+
+	case "6": // Dataset/Knowledge节点 (NodeType_Dataset)
+		inputs := make(map[string]interface{})
+		datasetParams := make([]map[string]interface{}, 0)
+
+		// datasetList - 知识库ID列表（前端期望是数组格式）
+		var datasetList []string
+		if kbID, ok := rawConfig["knowledge_base_id"].(string); ok {
+			datasetList = []string{kbID}
+		} else if kbIDs, ok := rawConfig["knowledge_base_ids"].([]interface{}); ok {
+			for _, id := range kbIDs {
+				if idStr, ok := id.(string); ok {
+					datasetList = append(datasetList, idStr)
+				}
+			}
+		}
+
+		if len(datasetList) > 0 {
+			datasetParams = append(datasetParams, map[string]interface{}{
+				"name": "datasetList",
+				"input": map[string]interface{}{
+					"type": "list",
+					"schema": map[string]interface{}{
+						"type": "string",
+					},
+					"value": map[string]interface{}{
+						"type":    "literal",
+						"content": datasetList,
+					},
+				},
+			})
+		}
+
+		// topK - Top K值
+		topK := 5 // 默认值
+		if tk, ok := rawConfig["top_k"]; ok {
+			switch v := tk.(type) {
+			case int:
+				topK = v
+			case float64:
+				topK = int(v)
+			case string:
+				fmt.Sscanf(v, "%d", &topK)
+			}
+		}
+		datasetParams = append(datasetParams, map[string]interface{}{
+			"name": "topK",
+			"input": map[string]interface{}{
+				"type": "integer",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": topK,
+				},
+			},
+		})
+
+		// useRerank - 是否使用重排序（默认false）
+		useRerank := false
+		if val, ok := rawConfig["use_rerank"].(bool); ok {
+			useRerank = val
+		}
+		datasetParams = append(datasetParams, map[string]interface{}{
+			"name": "useRerank",
+			"input": map[string]interface{}{
+				"type": "boolean",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": useRerank,
+				},
+			},
+		})
+
+		// useRewrite - 是否使用查询重写（默认false）
+		useRewrite := false
+		if val, ok := rawConfig["use_rewrite"].(bool); ok {
+			useRewrite = val
+		}
+		datasetParams = append(datasetParams, map[string]interface{}{
+			"name": "useRewrite",
+			"input": map[string]interface{}{
+				"type": "boolean",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": useRewrite,
+				},
+			},
+		})
+
+		// isPersonalOnly - 是否仅个人知识库（默认false）
+		isPersonalOnly := false
+		if val, ok := rawConfig["is_personal_only"].(bool); ok {
+			isPersonalOnly = val
+		}
+		datasetParams = append(datasetParams, map[string]interface{}{
+			"name": "isPersonalOnly",
+			"input": map[string]interface{}{
+				"type": "boolean",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": isPersonalOnly,
+				},
+			},
+		})
+
+		inputs["datasetParam"] = datasetParams
+
+		// inputParameters - 输入参数（查询文本）
+		inputParams := make([]map[string]interface{}, 0)
+		if query, ok := rawConfig["query"].(string); ok {
+			inputParams = append(inputParams, map[string]interface{}{
+				"name": "Query",
+				"input": map[string]interface{}{
+					"type": "string",
+					"value": map[string]interface{}{
+						"type":    "literal",
+						"content": query,
+					},
+				},
+			})
+		}
+		inputs["inputParameters"] = inputParams
+
+		voConfig["inputs"] = inputs
+
+	case "8": // If节点 (NodeType_If)
+		if _, ok := rawConfig["condition"].(string); ok {
+			voConfig["branches"] = []map[string]interface{}{
+				{
+					"condition": map[string]interface{}{
+						"logic":      "AND",
+						"conditions": []map[string]interface{}{},
+					},
+				},
+			}
+		}
+
+	case "9": // SubWorkflow节点 (NodeType_SubWorkflow)
+		if workflowID, ok := rawConfig["workflow_id"].(string); ok {
+			voConfig["subWorkflow"] = map[string]interface{}{
+				"workflowID": workflowID,
+			}
+		}
+
+	case "12": // Database节点 (NodeType_Database)
+		if sql, ok := rawConfig["sql"].(string); ok {
+			voConfig["sql"] = sql
+		}
+		if operation, ok := rawConfig["operation"].(string); ok {
+			// 根据操作类型设置相应的参数
+			switch operation {
+			case "query", "select":
+				voConfig["selectParam"] = map[string]interface{}{
+					"limit": 100,
+				}
+			case "insert":
+				voConfig["insertParam"] = map[string]interface{}{}
+			case "update":
+				voConfig["updateParam"] = map[string]interface{}{}
+			case "delete":
+				voConfig["deleteParam"] = map[string]interface{}{}
+			}
+		}
+
+	case "21": // Loop节点 (NodeType_Loop)
+		if items, ok := rawConfig["items_path"].(string); ok {
+			voConfig["loopType"] = "array"
+			voConfig["variableParameters"] = []map[string]interface{}{
+				{
+					"name": "items",
+					"input": map[string]interface{}{
+						"type": "array",
+						"value": map[string]interface{}{
+							"type":    "reference",
+							"content": items,
+						},
+					},
+				},
+			}
+		}
+		if _, ok := rawConfig["loop_variable"].(string); ok {
+			if voConfig["variableParameters"] == nil {
+				voConfig["variableParameters"] = []map[string]interface{}{}
+			}
+		}
+
+	case "11": // Variable节点 (NodeType_Variable)
+		// 变量节点通常用于存储和传递数据
+		if value, ok := rawConfig["value"]; ok {
+			voConfig["variableParameters"] = []map[string]interface{}{
+				{
+					"name": "value",
+					"input": map[string]interface{}{
+						"type":  "string",
+						"value": value,
+					},
+				},
+			}
+		}
+
+	case "13": // Message节点 (NodeType_Message)
+		// 消息节点用于发送消息
+		if content, ok := rawConfig["content"].(string); ok {
+			voConfig["content"] = map[string]interface{}{
+				"type": "string",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": content,
+				},
+			}
+		}
+
+	case "15": // Text节点 (NodeType_Text)
+		// 文本处理节点
+		if method, ok := rawConfig["method"].(string); ok {
+			voConfig["method"] = method
+		}
+		if text, ok := rawConfig["text"].(string); ok {
+			voConfig["concatParams"] = []map[string]interface{}{
+				{
+					"name": "text",
+					"input": map[string]interface{}{
+						"type": "string",
+						"value": map[string]interface{}{
+							"type":    "literal",
+							"content": text,
+						},
+					},
+				},
+			}
+		}
+
+	case "18": // Question/QA节点 (NodeType_Question)
+		if question, ok := rawConfig["question"].(string); ok {
+			voConfig["question"] = question
+		}
+		if answerType, ok := rawConfig["answer_type"].(string); ok {
+			voConfig["answer_type"] = answerType
+		} else {
+			voConfig["answer_type"] = "text" // 默认文本回答
+		}
+		if options, ok := rawConfig["options"].([]interface{}); ok {
+			voConfig["options"] = options
+			voConfig["option_type"] = "static"
+		}
+
+	case "40": // AssignVariable节点 (NodeType_AssignVariable)
+		// 变量赋值节点
+		if assignments, ok := rawConfig["assignments"].([]interface{}); ok {
+			voConfig["variableTypeMap"] = map[string]interface{}{}
+			inputParams := make([]map[string]interface{}, 0)
+			for _, assign := range assignments {
+				if assignMap, ok := assign.(map[string]interface{}); ok {
+					inputParams = append(inputParams, map[string]interface{}{
+						"left": map[string]interface{}{
+							"type":  "string",
+							"value": assignMap["variable"],
+						},
+						"right": map[string]interface{}{
+							"type":  "string",
+							"value": assignMap["value"],
+						},
+					})
+				}
+			}
+			voConfig["inputParameters"] = inputParams
+		}
+
+	case "28": // Batch节点 (NodeType_Batch)
+		if batchSize := rawConfig["batch_size"]; batchSize != nil {
+			voConfig["batchSize"] = map[string]interface{}{
+				"type": "integer",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": fmt.Sprintf("%v", batchSize),
+				},
+			}
+		}
+		if concurrentSize := rawConfig["concurrent_size"]; concurrentSize != nil {
+			voConfig["concurrentSize"] = map[string]interface{}{
+				"type": "integer",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": fmt.Sprintf("%v", concurrentSize),
+				},
+			}
+		}
+
+	case "30": // Input节点 (NodeType_Input)
+		// 输入接收节点，类似Start节点
+		if inputs, ok := rawConfig["inputs"].([]interface{}); ok {
+			inputParams := make([]map[string]interface{}, 0, len(inputs))
+			for _, input := range inputs {
+				if inputMap, ok := input.(map[string]interface{}); ok {
+					param := map[string]interface{}{
+						"name":        inputMap["name"],
+						"type":        inputMap["type"],
+						"description": inputMap["description"],
+						"required":    inputMap["required"],
+					}
+					inputParams = append(inputParams, param)
+				}
+			}
+			voConfig["inputParameters"] = inputParams
+		}
+
+	case "22": // Intent节点 (NodeType_Intent)
+		// 意图识别节点
+		if intents, ok := rawConfig["intents"].([]interface{}); ok {
+			intentList := make([]map[string]interface{}, 0)
+			for _, intent := range intents {
+				if intentMap, ok := intent.(map[string]interface{}); ok {
+					intentList = append(intentList, map[string]interface{}{
+						"name": intentMap["name"],
+					})
+				}
+			}
+			voConfig["intents"] = intentList
+		}
+		voConfig["mode"] = "auto" // 默认自动模式
+
+	case "27": // DatasetWrite节点 (NodeType_DatasetWrite)
+		// 知识库写入节点
+		if datasetID, ok := rawConfig["dataset_id"].(string); ok {
+			voConfig["datasetInfoList"] = []map[string]interface{}{
+				{"datasetInfoID": datasetID},
+			}
+		}
+		if documents := rawConfig["documents"]; documents != nil {
+			voConfig["inputParameters"] = []map[string]interface{}{
+				{
+					"name": "documents",
+					"input": map[string]interface{}{
+						"type":  "array",
+						"value": documents,
+					},
+				},
+			}
+		}
+
+	case "37": // MessageList节点 (NodeType_MessageList)
+		// 消息列表节点
+		if messages := rawConfig["messages"]; messages != nil {
+			voConfig["inputParameters"] = []map[string]interface{}{
+				{
+					"name": "messages",
+					"input": map[string]interface{}{
+						"type":  "array",
+						"value": messages,
+					},
+				},
+			}
+		}
+
+	case "55": // CreateMessage节点 (NodeType_CreateMessage)
+		// 创建消息节点
+		if content, ok := rawConfig["content"].(string); ok {
+			voConfig["content"] = map[string]interface{}{
+				"type": "string",
+				"value": map[string]interface{}{
+					"type":    "literal",
+					"content": content,
+				},
+			}
+		}
+		if messageType, ok := rawConfig["message_type"].(string); ok {
+			voConfig["messageType"] = messageType
+		}
+
+	case "19": // Break节点 (NodeType_Break)
+		// 中断循环节点，通常不需要配置
+		voConfig["inputParameters"] = []map[string]interface{}{}
+
+	case "29": // Continue节点 (NodeType_Continue)
+		// 继续循环节点，通常不需要配置
+		voConfig["inputParameters"] = []map[string]interface{}{}
+
+	case "58": // JsonSerialization节点 (NodeType_JsonSerialization)
+		// JSON序列化节点
+		if data := rawConfig["data"]; data != nil {
+			voConfig["inputParameters"] = []map[string]interface{}{
+				{
+					"name": "data",
+					"input": map[string]interface{}{
+						"type":  "object",
+						"value": data,
+					},
+				},
+			}
+		}
+
+	case "59": // JsonDeserialization节点 (NodeType_JsonDeserialization)
+		// JSON反序列化节点
+		if jsonStr, ok := rawConfig["json_string"].(string); ok {
+			voConfig["inputParameters"] = []map[string]interface{}{
+				{
+					"name": "json_string",
+					"input": map[string]interface{}{
+						"type": "string",
+						"value": map[string]interface{}{
+							"type":    "literal",
+							"content": jsonStr,
+						},
+					},
+				},
+			}
+		}
+
+	default:
+		// 对于未明确处理的节点类型，尝试智能转换
+		// 如果有inputParameters字段，直接使用
+		if inputParams, ok := rawConfig["inputParameters"]; ok {
+			voConfig["inputParameters"] = inputParams
+		} else {
+			// 否则保持原样
+			return rawConfig
+		}
+	}
+
+	return voConfig
+}
+
 // convertToAPINodes 将 domain 层的 NodeInfo 转换为 API 层的 GeneratedNodeInfo
 func convertToAPINodes(domainNodes []*domainWorkflow.NodeInfo, explanations map[string]string) []*workflow.GeneratedNodeInfo {
 	if len(domainNodes) == 0 {
@@ -4493,12 +5165,15 @@ func convertToAPINodes(domainNodes []*domainWorkflow.NodeInfo, explanations map[
 
 	apiNodes := make([]*workflow.GeneratedNodeInfo, 0, len(domainNodes))
 	for _, dn := range domainNodes {
+		mappedType := mapNodeTypeToNumber(dn.Type)
+		convertedConfig := convertLLMConfigToVOFormat(mappedType, dn.Config)
+
 		apiNode := &workflow.GeneratedNodeInfo{
 			ID:          dn.ID,
 			Name:        dn.Name,
-			Type:        dn.Type,
-			Description: explanations[dn.ID], // 从 explanations 获取描述
-			Config:      dn.Config,
+			Type:        mappedType,                   // 映射类型为数字字符串
+			Description: explanations[dn.ID],          // 从 explanations 获取描述
+			Config:      convertedConfig,              // 转换config格式
 		}
 
 		if dn.Position != nil {

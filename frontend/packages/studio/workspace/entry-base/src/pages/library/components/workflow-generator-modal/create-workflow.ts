@@ -101,22 +101,37 @@ const saveWorkflowCanvas = async (params: {
   nodes: GeneratedNode[];
   edges: GeneratedEdge[];
 }) => {
+  // Convert backend node format to frontend node format
+  const frontendNodes = params.nodes.map(node => ({
+    id: node.id,
+    type: node.type,
+    meta: {
+      position: node.position || { x: 0, y: 0 },
+    },
+    data: node.config || {},
+  }));
+
   // Convert backend edge format to frontend edge format
   const frontendEdges: FrontendEdge[] = params.edges.map(edge => ({
     sourceNodeID: edge.source,
     targetNodeID: edge.target,
   }));
 
+  console.log('[saveWorkflowCanvas] Backend nodes:', params.nodes);
+  console.log('[saveWorkflowCanvas] Frontend nodes:', frontendNodes);
   console.log('[saveWorkflowCanvas] Backend edges:', params.edges);
   console.log('[saveWorkflowCanvas] Frontend edges:', frontendEdges);
 
   // Create schema object with nodes and edges in frontend format
   const schema = {
-    nodes: params.nodes,
+    nodes: frontendNodes,
     edges: frontendEdges,
   };
 
-  console.log('[saveWorkflowCanvas] Schema to save:', JSON.stringify(schema, null, 2));
+  console.log(
+    '[saveWorkflowCanvas] Schema to save:',
+    JSON.stringify(schema, null, 2),
+  );
 
   const response = await fetch('/api/workflow_api/save', {
     method: 'POST',
