@@ -573,7 +573,27 @@ services:
       context: ../
       dockerfile: backend/Dockerfile
     image: opencoze/opencoze:latest
+    container_name: coze-server
     profiles: ['build-server']
+    env_file: *env_file
+    ports:
+      - '0.0.0.0:8890:8888'
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+      nsqd:
+        condition: service_healthy
+    networks:
+      - coze-network
+    restart: unless-stopped
 
 networks:
   coze-network:

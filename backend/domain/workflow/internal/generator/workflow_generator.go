@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package generator
 
 import (
@@ -9,7 +25,7 @@ import (
 
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
-	
+
 	"github.com/coze-dev/coze-studio/backend/pkg/logs"
 )
 
@@ -42,54 +58,54 @@ func (g *WorkflowGenerator) GenerateWorkflow(
 	req *WorkflowGenerationRequest,
 ) (*WorkflowGenerationResponse, error) {
 	startTime := time.Now()
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Start generating workflow for requirement: %s (language: %s)", 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Start generating workflow for requirement: %s (language: %s)",
 		req.UserRequirement, req.Language)
 
 	// 步骤 1：意图分析
 	step1Start := time.Now()
 	intent, err := g.analyzeIntent(ctx, req)
 	if err != nil {
-		logs.CtxErrorf(ctx, "[WorkflowGenerator] Intent analysis failed after %v: %v", 
+		logs.CtxErrorf(ctx, "[WorkflowGenerator] Intent analysis failed after %v: %v",
 			time.Since(step1Start), err)
 		return nil, fmt.Errorf("意图分析失败: %w", err)
 	}
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Intent analysis completed in %v: type=%s, confidence=%.2f, steps=%d", 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Intent analysis completed in %v: type=%s, confidence=%.2f, steps=%d",
 		time.Since(step1Start), intent.Intent.WorkflowType, intent.Intent.Confidence, len(intent.KeySteps))
 
 	// 步骤 2：匹配最佳实践模板
 	step2Start := time.Now()
 	templates := g.templateRepo.FindSimilarTemplates(intent.Intent.WorkflowType, 3)
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Found %d similar templates in %v", 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Found %d similar templates in %v",
 		len(templates), time.Since(step2Start))
 
 	// 步骤 3：LLM 生成工作流结构
 	step3Start := time.Now()
 	rawWorkflow, err := g.llmGenerateWorkflow(ctx, req, intent, templates)
 	if err != nil {
-		logs.CtxErrorf(ctx, "[WorkflowGenerator] LLM generation failed after %v: %v", 
+		logs.CtxErrorf(ctx, "[WorkflowGenerator] LLM generation failed after %v: %v",
 			time.Since(step3Start), err)
 		return nil, fmt.Errorf("LLM 生成失败: %w", err)
 	}
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Generated workflow in %v: name=%s, nodes=%d, edges=%d, confidence=%.2f", 
-		time.Since(step3Start), rawWorkflow.WorkflowName, len(rawWorkflow.Nodes), 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Generated workflow in %v: name=%s, nodes=%d, edges=%d, confidence=%.2f",
+		time.Since(step3Start), rawWorkflow.WorkflowName, len(rawWorkflow.Nodes),
 		len(rawWorkflow.Edges), rawWorkflow.Confidence)
 
 	// 步骤 4：节点配置自动推断
 	step4Start := time.Now()
 	configuredWorkflow := g.configureNodes(rawWorkflow, intent)
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Node configuration completed in %v", 
-		time.Since(step4Start))
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Node configuration completed in %v, nodes=%d, edges=%d",
+		time.Since(step4Start), len(configuredWorkflow.Nodes), len(configuredWorkflow.Edges))
 
 	// 步骤 5：自动布局
 	step5Start := time.Now()
 	layoutWorkflow := g.layoutEngine.AutoLayout(configuredWorkflow)
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Auto layout completed in %v", 
-		time.Since(step5Start))
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Auto layout completed in %v, nodes=%d, edges=%d",
+		time.Since(step5Start), len(layoutWorkflow.Nodes), len(layoutWorkflow.Edges))
 
 	// 步骤 6：生成解释说明
 	step6Start := time.Now()
 	explanations := g.generateExplanations(layoutWorkflow, rawWorkflow)
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Generated %d explanations in %v", 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Generated %d explanations in %v",
 		len(explanations), time.Since(step6Start))
 
 	// 构造响应
@@ -103,9 +119,9 @@ func (g *WorkflowGenerator) GenerateWorkflow(
 	}
 
 	totalTime := time.Since(startTime)
-	logs.CtxInfof(ctx, "[WorkflowGenerator] Workflow generation completed successfully in %v (intent:%v, templates:%v, llm:%v, config:%v, layout:%v, explain:%v)", 
-		totalTime, 
-		step2Start.Sub(step1Start), 
+	logs.CtxInfof(ctx, "[WorkflowGenerator] Workflow generation completed successfully in %v (intent:%v, templates:%v, llm:%v, config:%v, layout:%v, explain:%v)",
+		totalTime,
+		step2Start.Sub(step1Start),
 		step3Start.Sub(step2Start),
 		step4Start.Sub(step3Start),
 		step5Start.Sub(step4Start),
@@ -137,7 +153,7 @@ func (g *WorkflowGenerator) analyzeIntent(
 
 	// 解析 JSON 响应
 	content := response.Content
-	
+
 	// 清理可能的 markdown 代码块标记
 	content = strings.TrimSpace(content)
 	content = strings.TrimPrefix(content, "```json")
@@ -182,7 +198,7 @@ func (g *WorkflowGenerator) llmGenerateWorkflow(
 
 	// 解析 JSON 响应
 	content := response.Content
-	
+
 	// 清理可能的 markdown 代码块标记
 	content = strings.TrimSpace(content)
 	content = strings.TrimPrefix(content, "```json")
