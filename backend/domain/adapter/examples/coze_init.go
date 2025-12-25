@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package main
+//go:build ignore
+
+package examples
 
 import (
 	"context"

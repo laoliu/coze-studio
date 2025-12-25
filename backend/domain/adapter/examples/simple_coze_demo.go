@@ -1,5 +1,7 @@
 // Copyright 2025 Coze Studio. All rights reserved.
 
+//go:build ignore
+
 package main
 
 import (
@@ -9,9 +11,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
+	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
 )
 
 func main() {

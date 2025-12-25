@@ -18,9 +18,9 @@ type K12Adapter struct {
 
 // K12Config K12适配器配置
 type K12Config struct {
-	SupportedSubjects []string          // 支持的科目
-	GradeMapping      map[string]string // 年级映射
-	CurriculumStandard string           // 课程标准
+	SupportedSubjects  []string          // 支持的科目
+	GradeMapping       map[string]string // 年级映射
+	CurriculumStandard string            // 课程标准
 }
 
 // NewK12Adapter 创建K12适配器
@@ -72,13 +72,13 @@ func (a *K12Adapter) ParseRequest(input *entity.UserInput) (*entity.RequestConte
 	if input.Topic == "" {
 		return nil, fmt.Errorf("topic is required")
 	}
-	
+
 	// 2. 标准化年级
 	grade := input.Grade
 	if mappedGrade, ok := a.config.GradeMapping[input.Grade]; ok {
 		grade = mappedGrade
 	}
-	
+
 	// 3. 构建请求上下文
 	ctx := &entity.RequestContext{
 		Topic:        input.Topic,
@@ -89,10 +89,10 @@ func (a *K12Adapter) ParseRequest(input *entity.UserInput) (*entity.RequestConte
 		Language:     input.Language,
 		DomainSpecific: map[string]any{
 			"curriculum_standard": a.config.CurriculumStandard,
-			"subject":            input.Domain,
+			"subject":             input.Domain,
 		},
 	}
-	
+
 	// 4. 设置默认值
 	if ctx.Language == "" {
 		ctx.Language = "zh-CN"
@@ -100,7 +100,7 @@ func (a *K12Adapter) ParseRequest(input *entity.UserInput) (*entity.RequestConte
 	if ctx.Duration == 0 {
 		ctx.Duration = 45 // 默认45分钟（一节课）
 	}
-	
+
 	// 5. 添加学习者画像
 	if input.Grade != "" {
 		ctx.LearnerProfile = &entity.LearnerProfile{
@@ -109,7 +109,7 @@ func (a *K12Adapter) ParseRequest(input *entity.UserInput) (*entity.RequestConte
 			LearningStyle:  "mixed", // 默认混合式
 		}
 	}
-	
+
 	return ctx, nil
 }
 
@@ -119,7 +119,7 @@ func (a *K12Adapter) ValidateContext(ctx *entity.RequestContext) error {
 	if ctx.Topic == "" {
 		return fmt.Errorf("topic is required")
 	}
-	
+
 	// 2. 验证科目
 	validSubject := false
 	for _, subject := range a.config.SupportedSubjects {
@@ -131,7 +131,7 @@ func (a *K12Adapter) ValidateContext(ctx *entity.RequestContext) error {
 	if !validSubject {
 		return fmt.Errorf("unsupported subject: %s", ctx.Domain)
 	}
-	
+
 	// 3. 验证年级
 	if ctx.Grade != "" {
 		validGrade := false
@@ -145,7 +145,7 @@ func (a *K12Adapter) ValidateContext(ctx *entity.RequestContext) error {
 			return fmt.Errorf("unsupported grade: %s", ctx.Grade)
 		}
 	}
-	
+
 	// 4. 验证活动类型
 	if ctx.ActivityType != "" {
 		validActivity := false
@@ -159,12 +159,12 @@ func (a *K12Adapter) ValidateContext(ctx *entity.RequestContext) error {
 			return fmt.Errorf("unsupported activity type: %s", ctx.ActivityType)
 		}
 	}
-	
+
 	// 5. 验证时长
 	if ctx.Duration < 10 || ctx.Duration > 120 {
 		return fmt.Errorf("duration must be between 10 and 120 minutes")
 	}
-	
+
 	return nil
 }
 
@@ -172,26 +172,26 @@ func (a *K12Adapter) ValidateContext(ctx *entity.RequestContext) error {
 func (a *K12Adapter) GenerateLearningObjectives(ctx *entity.RequestContext) ([]*entity.LearningObjective, error) {
 	// TODO: 调用AI能力层的ObjectiveGenerator
 	// 这里先返回占位符数据
-	
+
 	objectives := []*entity.LearningObjective{
 		{
-			ID:          "obj_1",
-			Objective:   fmt.Sprintf("理解%s的基本概念和原理", ctx.Topic),
-			Level:       "理解",
-			Category:    "知识",
+			ID:           "obj_1",
+			Objective:    fmt.Sprintf("理解%s的基本概念和原理", ctx.Topic),
+			Level:        "理解",
+			Category:     "知识",
 			IsMeasurable: true,
-			Assessment:  "概念解释、案例分析",
+			Assessment:   "概念解释、案例分析",
 		},
 		{
-			ID:          "obj_2",
-			Objective:   fmt.Sprintf("能够应用%s解决实际问题", ctx.Topic),
-			Level:       "应用",
-			Category:    "技能",
+			ID:           "obj_2",
+			Objective:    fmt.Sprintf("能够应用%s解决实际问题", ctx.Topic),
+			Level:        "应用",
+			Category:     "技能",
 			IsMeasurable: true,
-			Assessment:  "问题解决、实验操作",
+			Assessment:   "问题解决、实验操作",
 		},
 	}
-	
+
 	return objectives, nil
 }
 
@@ -199,7 +199,7 @@ func (a *K12Adapter) GenerateLearningObjectives(ctx *entity.RequestContext) ([]*
 func (a *K12Adapter) DiscoverContent(ctx *entity.RequestContext, objectives []*entity.LearningObjective) ([]*entity.Content, error) {
 	// TODO: 调用AI能力层的ContentDiscovery
 	// 这里先返回占位符数据
-	
+
 	contents := []*entity.Content{
 		{
 			ID:          "content_1",
@@ -219,7 +219,7 @@ func (a *K12Adapter) DiscoverContent(ctx *entity.RequestContext, objectives []*e
 			Relevance:   0.88,
 		},
 	}
-	
+
 	return contents, nil
 }
 
@@ -228,25 +228,25 @@ func (a *K12Adapter) CustomizeWorkflow(ctx *entity.RequestContext) (*entity.Work
 	// 根据活动类型选择不同的工作流模板
 	var template string
 	var nodes []*entity.NodeConfig
-	
+
 	switch ctx.ActivityType {
 	case entity.ActivityTypeConcept:
 		template = "concept_understanding_workflow"
 		nodes = a.buildConceptWorkflowNodes(ctx)
-		
+
 	case entity.ActivityTypeExperiment:
 		template = "experiment_workflow"
 		nodes = a.buildExperimentWorkflowNodes(ctx)
-		
+
 	case entity.ActivityTypeProblem:
 		template = "problem_solving_workflow"
 		nodes = a.buildProblemSolvingWorkflowNodes(ctx)
-		
+
 	default:
 		template = "default_workflow"
 		nodes = a.buildDefaultWorkflowNodes(ctx)
 	}
-	
+
 	return &entity.WorkflowConfig{
 		WorkflowID: fmt.Sprintf("workflow_%s_%s", ctx.Domain, ctx.ActivityType),
 		Template:   template,
@@ -264,17 +264,17 @@ func (a *K12Adapter) CustomizeWorkflow(ctx *entity.RequestContext) (*entity.Work
 func (a *K12Adapter) FormatOutput(result *entity.WorkflowResult) (interface{}, error) {
 	// 格式化为K12教学活动格式
 	output := map[string]interface{}{
-		"activity_id":   result.WorkflowID,
-		"title":         result.Output["title"],
-		"objectives":    result.Output["objectives"],
-		"content":       result.Output["content"],
-		"narrative":     result.Output["narrative"],
-		"assessment":    result.Output["assessment"],
-		"duration":      result.Output["duration"],
-		"materials":     result.Output["materials"],
-		"instructions":  result.Output["instructions"],
+		"activity_id":  result.WorkflowID,
+		"title":        result.Output["title"],
+		"objectives":   result.Output["objectives"],
+		"content":      result.Output["content"],
+		"narrative":    result.Output["narrative"],
+		"assessment":   result.Output["assessment"],
+		"duration":     result.Output["duration"],
+		"materials":    result.Output["materials"],
+		"instructions": result.Output["instructions"],
 	}
-	
+
 	return output, nil
 }
 
@@ -282,7 +282,7 @@ func (a *K12Adapter) FormatOutput(result *entity.WorkflowResult) (interface{}, e
 func (a *K12Adapter) ValidateOutput(output interface{}) (*entity.QualityReport, error) {
 	// TODO: 调用AI能力层的QualityAssessor
 	// 这里先返回占位符数据
-	
+
 	report := &entity.QualityReport{
 		OverallScore: 85.0,
 		Dimensions: map[string]float64{
@@ -305,7 +305,7 @@ func (a *K12Adapter) ValidateOutput(output interface{}) (*entity.QualityReport, 
 		},
 		IsApproved: true,
 	}
-	
+
 	return report, nil
 }
 

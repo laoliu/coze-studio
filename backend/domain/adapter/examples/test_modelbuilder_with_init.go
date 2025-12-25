@@ -1,6 +1,8 @@
 // Copyright 2025 Coze Studio. All rights reserved.
 // 测试 ModelBuilder 的最小示例 - 带配置初始化
 
+//go:build ignore
+
 package main
 
 import (
@@ -15,16 +17,16 @@ import (
 
 func main() {
 	fmt.Println("=== Coze ModelBuilder 测试 ===")
-	
+
 	ctx := context.Background()
-	
+
 	// 初始化 Coze 配置
 	fmt.Println("正在初始化 Coze 配置...")
 	if err := InitCozeConfig(ctx); err != nil {
 		log.Fatalf("❌ 初始化配置失败: %v\n", err)
 	}
 	fmt.Println("✓ 配置初始化成功\n")
-	
+
 	// 从环境变量获取 Model ID
 	modelIDStr := os.Getenv("COZE_MODEL_ID")
 	if modelIDStr == "" {
@@ -38,7 +40,7 @@ func main() {
 
 	fmt.Printf("Model ID: %d\n", modelID)
 	fmt.Println("正在加载 Model 配置...")
-	
+
 	// 使用 Coze ModelBuilder 创建 ChatModel
 	chatModel, toolsModel, err := modelbuilder.BuildModelByID(ctx, modelID, nil)
 	if err != nil {
@@ -46,7 +48,7 @@ func main() {
 	}
 
 	fmt.Println("\n✅ 成功创建 ChatModel!")
-	
+
 	if chatModel != nil {
 		fmt.Println("   - ChatModel: 可用")
 	}

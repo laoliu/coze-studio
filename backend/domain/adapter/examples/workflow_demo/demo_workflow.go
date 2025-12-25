@@ -12,15 +12,15 @@ import (
 	"github.com/coze-dev/coze-studio/backend/domain/adapter/repository"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	
+
 	// 导入实际的 adapter 包（需要在 examples 中导出）
-	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
-	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
-	"github.com/coze-dev/coze-studio/backend/domain/adapter/prompts"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
+	"github.com/coze-dev/coze-studio/backend/api/model/app/bot_common"
+	"github.com/coze-dev/coze-studio/backend/bizpkg/llm/modelbuilder"
 	crossworkflow "github.com/coze-dev/coze-studio/backend/crossdomain/workflow"
 	workflowModel "github.com/coze-dev/coze-studio/backend/crossdomain/workflow/model"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/prompts"
 	"strconv"
 )
 
@@ -190,21 +190,21 @@ func runWorkflowDemo(adapter *examples.CozeK12Adapter) {
 		fmt.Println()
 		fmt.Println("📝 继续使用 mock 数据演示后续流程...")
 		fmt.Println()
-		
+
 		// 使用 mock 数据继续演示
 		workflowResult = &entity.WorkflowResult{
 			WorkflowID: "1000001",
 			Status:     "success",
 			Output: map[string]any{
-				"topic":       userInput.Topic,
-				"domain":      userInput.Domain,
-				"grade":       "10",
-				"title":       "光合作用 - 概念理解",
-				"objectives":  objectives,
-				"content":     contents,
-				"duration":    userInput.Duration,
-				"assessment":  "概念测试、实验观察",
-				"materials":   []string{"显微镜", "植物叶片", "PPT"},
+				"topic":        userInput.Topic,
+				"domain":       userInput.Domain,
+				"grade":        "10",
+				"title":        "光合作用 - 概念理解",
+				"objectives":   objectives,
+				"content":      contents,
+				"duration":     userInput.Duration,
+				"assessment":   "概念测试、实验观察",
+				"materials":    []string{"显微镜", "植物叶片", "PPT"},
 				"instructions": "1. 导入\n2. 概念讲解\n3. 实验观察\n4. 总结",
 			},
 			ExecutionTime: 3500,

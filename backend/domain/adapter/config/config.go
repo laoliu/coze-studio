@@ -19,7 +19,7 @@ type AdapterConfig struct {
 
 // LLMConfig LLM 配置
 type LLMConfig struct {
-	Provider    string  `yaml:"provider"`    // openai, ark, claude, gemini
+	Provider    string  `yaml:"provider"` // openai, ark, claude, gemini
 	Model       string  `yaml:"model"`
 	APIKey      string  `yaml:"api_key"`
 	BaseURL     string  `yaml:"base_url"`
@@ -40,16 +40,16 @@ type DatabaseConfig struct {
 
 // ContentConfig 内容配置
 type ContentConfig struct {
-	SearchLimit         int     `yaml:"search_limit"`
-	RelevanceThreshold  float64 `yaml:"relevance_threshold"`
+	SearchLimit        int     `yaml:"search_limit"`
+	RelevanceThreshold float64 `yaml:"relevance_threshold"`
 }
 
 // DebugConfig 调试配置
 type DebugConfig struct {
-	EnableMockLLM   bool `yaml:"enable_mock_llm"`
-	EnableMockDB    bool `yaml:"enable_mock_db"`
-	LogPrompts      bool `yaml:"log_prompts"`
-	LogResponses    bool `yaml:"log_responses"`
+	EnableMockLLM bool `yaml:"enable_mock_llm"`
+	EnableMockDB  bool `yaml:"enable_mock_db"`
+	LogPrompts    bool `yaml:"log_prompts"`
+	LogResponses  bool `yaml:"log_responses"`
 }
 
 // LoadConfig 加载配置
@@ -100,10 +100,10 @@ func LoadConfigFromEnv() *AdapterConfig {
 			RelevanceThreshold: getEnvFloat("CONTENT_RELEVANCE_THRESHOLD", 0.7),
 		},
 		Debug: DebugConfig{
-			EnableMockLLM:  getEnvBool("DEBUG_ENABLE_MOCK_LLM", false),
-			EnableMockDB:   getEnvBool("DEBUG_ENABLE_MOCK_DB", false),
-			LogPrompts:     getEnvBool("DEBUG_LOG_PROMPTS", false),
-			LogResponses:   getEnvBool("DEBUG_LOG_RESPONSES", false),
+			EnableMockLLM: getEnvBool("DEBUG_ENABLE_MOCK_LLM", false),
+			EnableMockDB:  getEnvBool("DEBUG_ENABLE_MOCK_DB", false),
+			LogPrompts:    getEnvBool("DEBUG_LOG_PROMPTS", false),
+			LogResponses:  getEnvBool("DEBUG_LOG_RESPONSES", false),
 		},
 	}
 

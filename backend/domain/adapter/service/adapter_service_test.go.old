@@ -1,0 +1,276 @@
+/*
+ * Copyright 2025 coze-dev Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package service
+
+import (
+	"context"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"github.com/coze-dev/coze-studio/backend/domain/adapter"
+	"github.com/coze-dev/coze-studio/backend/domain/adapter/validator"
+	compEntity "github.com/coze-dev/coze-studio/backend/domain/component/entity"
+)
+
+// mockDomainAdapter 模拟领域适配器
+type mockDomainAdapter struct {
+	metadata *adapter.AdapterMetadata
+}
+
+func (m *mockDomainAdapter) GetMetadata() *adapter.AdapterMetadata {
+	return m.metadata
+}
+
+func (m *mockDomainAdapter) Validate(ctx context.Context, input *adapter.AdapterInput) error {
+	return nil
+}
+
+func (m *mockDomainAdapter) Execute(ctx context.Context, input *adapter.AdapterInput) (*adapter.AdapterOutput, error) {
+	return &adapter.AdapterOutput{
+		Result:   map[string]interface{}{"status": "success"},
+		Metadata: map[string]interface{}{"adapter_id": m.metadata.AdapterID},
+	}, nil
+}
+
+// setupMockDB 创建模拟数据库
+func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{
+		Conn: db,
+	}), &gorm.Config{})
+	require.NoError(t, err)
+
+	return gormDB, mock
+}
+
+func TestAdapterService_ListAdapters(t *testing.T) {
+	db, mock := setupMockDB(t)
+
+	// 创建服务
+	service := &AdapterService{
+		db:        db,
+		validator: validator.NewAdapterValidator(),
+	}
+
+	tests := []struct {
+		name      string
+		request   *ListAdaptersRequest
+		setupMock func(mock sqlmock.Sqlmock)
+		wantCount int
+		wantError bool
+	}{
+		{
+			name: "list all adapters",
+			request: &ListAdaptersRequest{
+				Page:     1,
+				PageSize: 20,
+			},
+			setupMock: func(mock sqlmock.Sqlmock) {
+				// Mock COUNT query
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+
+				// Mock SELECT query
+				rows := sqlmock.NewRows([]string{
+					"component_id", "name", "display_name", "description", "version",
+					"type", "category", "status", "author_id", "author_name",
+					"rating", "install_count", "usage_count", "created_at", "updated_at",
+				}).
+					AddRow("k12.math_problem_generator", "math_problem_generator", "Math Problem Generator",
+						"Generate math problems", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.5, 100, 1000, "2025-01-01", "2025-01-01").
+					AddRow("art.painting_analyzer", "painting_analyzer", "Painting Analyzer",
+						"Analyze paintings", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.8, 200, 2000, "2025-01-01", "2025-01-01").
+					AddRow("vocational.skill_assessor", "skill_assessor", "Skill Assessor",
+						"Assess skills", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.2, 50, 500, "2025-01-01", "2025-01-01")
+
+				mock.ExpectQuery(`SELECT \* FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive).
+					WillReturnRows(rows)
+			},
+			wantCount: 3,
+			wantError: false,
+		},
+		{
+			name: "list with category filter",
+			request: &ListAdaptersRequest{
+				Category: "domain",
+				Page:     1,
+				PageSize: 20,
+			},
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive, "domain").
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+
+				rows := sqlmock.NewRows([]string{
+					"component_id", "name", "display_name", "description", "version",
+					"type", "category", "status", "author_id", "author_name",
+					"rating", "install_count", "usage_count", "created_at", "updated_at",
+				}).
+					AddRow("k12.math_problem_generator", "math_problem_generator", "Math Problem Generator",
+						"Generate math problems", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.5, 100, 1000, "2025-01-01", "2025-01-01").
+					AddRow("art.painting_analyzer", "painting_analyzer", "Painting Analyzer",
+						"Analyze paintings", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.8, 200, 2000, "2025-01-01", "2025-01-01")
+
+				mock.ExpectQuery(`SELECT \* FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive, "domain").
+					WillReturnRows(rows)
+			},
+			wantCount: 2,
+			wantError: false,
+		},
+		{
+			name: "search with query",
+			request: &ListAdaptersRequest{
+				Query:    "math",
+				Page:     1,
+				PageSize: 20,
+			},
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive, "math").
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+				rows := sqlmock.NewRows([]string{
+					"component_id", "name", "display_name", "description", "version",
+					"type", "category", "status", "author_id", "author_name",
+					"rating", "install_count", "usage_count", "created_at", "updated_at",
+				}).
+					AddRow("k12.math_problem_generator", "math_problem_generator", "Math Problem Generator",
+						"Generate math problems", "1.0.0", "adapter", "domain", "active",
+						1, "Admin", 4.5, 100, 1000, "2025-01-01", "2025-01-01")
+
+				mock.ExpectQuery(`SELECT \* FROM "components"`).
+					WithArgs(compEntity.ComponentTypeAdapter, compEntity.ComponentStatusActive, "math", "math").
+					WillReturnRows(rows)
+			},
+			wantCount: 1,
+			wantError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setupMock(mock)
+
+			resp, err := service.ListAdapters(context.Background(), tt.request)
+
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				require.NotNil(t, resp)
+				assert.Equal(t, tt.wantCount, len(resp.Adapters))
+				assert.Equal(t, tt.request.Page, resp.Page)
+				assert.Equal(t, tt.request.PageSize, resp.PageSize)
+			}
+
+			// 验证所有预期的 SQL 都被执行了
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestAdapterService_InstallAdapter(t *testing.T) {
+	db, mock := setupMockDB(t)
+
+	service := &AdapterService{
+		db:        db,
+		validator: validator.NewAdapterValidator(),
+	}
+
+	tests := []struct {
+		name      string
+		adapterID string
+		userID    int64
+		setupMock func(mock sqlmock.Sqlmock)
+		wantError bool
+	}{
+		{
+			name:      "successful installation",
+			adapterID: "k12.math_problem_generator",
+			userID:    123,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				// Mock UPDATE query
+				mock.ExpectExec(`UPDATE "components"`).
+					WithArgs(sqlmock.AnyArg(), "k12.math_problem_generator").
+					WillReturnResult(sqlmock.NewResult(0, 1))
+			},
+			wantError: false,
+		},
+		{
+			name:      "adapter not found",
+			adapterID: "nonexistent.adapter",
+			userID:    123,
+			setupMock: func(mock sqlmock.Sqlmock) {
+				mock.ExpectExec(`UPDATE "components"`).
+					WithArgs(sqlmock.AnyArg(), "nonexistent.adapter").
+					WillReturnResult(sqlmock.NewResult(0, 0))
+			},
+			wantError: false, // 实际实现中可能需要检查受影响的行数
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setupMock(mock)
+
+			err := service.InstallAdapter(context.Background(), tt.adapterID, tt.userID)
+
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+// 基准测试
+func BenchmarkAdapterService_ListAdapters(b *testing.B) {
+	db, _ := setupMockDB(&testing.T{})
+
+	service := &AdapterService{
+		db:        db,
+		validator: validator.NewAdapterValidator(),
+	}
+
+	req := &ListAdaptersRequest{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = service.ListAdapters(context.Background(), req)
+	}
+}

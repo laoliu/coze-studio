@@ -248,7 +248,7 @@ func (m *AdapterManager) AutoSelectAdapter(ctx context.Context, input *entity.Us
 	// 1. 根据领域匹配
 	// 2. 根据活动类型匹配
 	// 3. 使用AI意图识别
-	
+
 	// 目前简单实现：根据领域匹配
 	infos := m.registry.List()
 	for _, info := range infos {

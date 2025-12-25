@@ -1,6 +1,8 @@
 // Copyright 2025 Coze Studio. All rights reserved.
 // 完整的 ModelBuilder 测试示例 - 包含配置初始化
 
+//go:build ignore
+
 package main
 
 import (
@@ -22,9 +24,9 @@ import (
 
 func main() {
 	fmt.Println("=== Coze ModelBuilder 完整测试 ===\n")
-	
+
 	ctx := context.Background()
-	
+
 	// 步骤 1: 加载环境变量
 	fmt.Println("步骤 1/4: 加载环境变量...")
 	if err := loadEnvironment(); err != nil {
@@ -32,7 +34,7 @@ func main() {
 	} else {
 		fmt.Println("✓ 环境变量加载成功")
 	}
-	
+
 	// 步骤 2: 初始化数据库
 	fmt.Println("\n步骤 2/4: 初始化数据库连接...")
 	db, err := mysql.New()
@@ -40,7 +42,7 @@ func main() {
 		log.Fatalf("❌ 数据库初始化失败: %v\n", err)
 	}
 	fmt.Println("✓ 数据库连接成功")
-	
+
 	// 步骤 3: 初始化存储
 	fmt.Println("\n步骤 3/4: 初始化存储...")
 	oss, err := storage.New(ctx)
@@ -48,18 +50,18 @@ func main() {
 		log.Fatalf("❌ 存储初始化失败: %v\n", err)
 	}
 	fmt.Println("✓ 存储初始化成功")
-	
+
 	// 步骤 4: 初始化配置
 	fmt.Println("\n步骤 4/4: 初始化 Coze 配置...")
 	if err := config.Init(ctx, db, oss); err != nil {
 		log.Fatalf("❌ 配置初始化失败: %v\n", err)
 	}
 	fmt.Println("✓ Coze 配置初始化成功")
-	
+
 	fmt.Println("\n" + strings.Repeat("=", 50))
 	fmt.Println("配置初始化完成，开始测试 ModelBuilder")
 	fmt.Println(strings.Repeat("=", 50) + "\n")
-	
+
 	// 获取 Model ID
 	modelIDStr := os.Getenv("COZE_MODEL_ID")
 	if modelIDStr == "" {
@@ -72,7 +74,7 @@ func main() {
 	}
 
 	fmt.Printf("Model ID: %d\n\n", modelID)
-	
+
 	// 使用 ModelBuilder 创建 ChatModel
 	fmt.Println("正在使用 ModelBuilder 创建 ChatModel...")
 	chatModel, toolsModel, err := modelbuilder.BuildModelByID(ctx, modelID, nil)
@@ -82,7 +84,7 @@ func main() {
 
 	fmt.Println("\n✅ 成功创建 ChatModel!")
 	fmt.Println(strings.Repeat("=", 50))
-	
+
 	if chatModel != nil {
 		fmt.Println("✓ ChatModel: 可用 (用于对话)")
 	}

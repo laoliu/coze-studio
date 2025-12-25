@@ -14,6 +14,7 @@ const (
 	ComponentTypePlugin      ComponentType = "plugin"       // 插件
 	ComponentTypeWidget      ComponentType = "widget"       // 小部件
 	ComponentTypeIntegration ComponentType = "integration"  // 集成
+	ComponentTypeAdapter     ComponentType = "adapter"      // 适配器 (NEW)
 )
 
 // ComponentCategory 组件分类
@@ -25,6 +26,7 @@ const (
 	ComponentCategoryAnalysis      ComponentCategory = "analysis"      // 分析
 	ComponentCategoryExport        ComponentCategory = "export"        // 导出
 	ComponentCategoryMCP           ComponentCategory = "mcp"           // MCP工具
+	ComponentCategoryDomain        ComponentCategory = "domain"        // 领域适配器 (NEW)
 )
 
 // ComponentStatus 组件状态
@@ -46,16 +48,16 @@ type Component struct {
 	Category      ComponentCategory `json:"category" gorm:"size:50;not null;comment:组件分类"`
 	Version       string            `json:"version" gorm:"size:50;not null;comment:版本号"`
 	Description   string            `json:"description" gorm:"type:text;comment:描述"`
-	
+
 	// 作者信息
 	AuthorID      int64             `json:"author_id" gorm:"index;comment:作者ID"`
 	AuthorName    string            `json:"author_name" gorm:"size:100;comment:作者名称"`
-	
+
 	// 状态
 	Status        ComponentStatus   `json:"status" gorm:"size:20;default:active;comment:状态"`
 	IsOfficial    bool              `json:"is_official" gorm:"default:false;comment:是否官方"`
 	IsPublic      bool              `json:"is_public" gorm:"default:false;comment:是否公开"`
-	
+
 	// 配置 (JSON存储)
 	Config        JSON              `json:"config" gorm:"type:jsonb;comment:配置信息"`
 	// {
@@ -63,7 +65,7 @@ type Component struct {
 	//   "api_endpoint": "",
 	//   "authentication": {}
 	// }
-	
+
 	// 接口定义 (JSON存储)
 	Interface     JSON              `json:"interface" gorm:"type:jsonb;comment:接口定义"`
 	// {
@@ -71,10 +73,10 @@ type Component struct {
 	//   "outputs": [],
 	//   "methods": []
 	// }
-	
+
 	// 依赖 (JSON存储)
 	Dependencies  JSON              `json:"dependencies" gorm:"type:jsonb;comment:依赖项"`
-	
+
 	// 元数据
 	Tags          JSON              `json:"tags" gorm:"type:jsonb;comment:标签"`
 	Icon          string            `json:"icon" gorm:"size:500;comment:图标URL"`
@@ -82,12 +84,12 @@ type Component struct {
 	Repository    string            `json:"repository" gorm:"size:500;comment:代码仓库"`
 	Documentation string            `json:"documentation" gorm:"size:500;comment:文档地址"`
 	License       string            `json:"license" gorm:"size:50;comment:许可证"`
-	
+
 	// 统计信息
 	InstallCount  int               `json:"install_count" gorm:"default:0;comment:安装次数"`
 	UsageCount    int64             `json:"usage_count" gorm:"default:0;comment:使用次数"`
 	Rating        float64           `json:"rating" gorm:"default:0;comment:评分"`
-	
+
 	// 时间戳
 	CreatedAt     time.Time         `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt     time.Time         `json:"updated_at" gorm:"autoUpdateTime"`

@@ -1,5 +1,7 @@
 // Copyright 2025 Coze Studio. All rights reserved.
 
+//go:build ignore
+
 package examples
 
 import (
@@ -241,7 +243,6 @@ func (a *CozeK12Adapter) recommendContentByLLM(ctx *entity.AdapterContext, objec
 	return result.Contents, nil
 }
 
-
 // ExecuteWorkflow 使用 Coze 原生 Workflow 系统执行工作流
 // 这个方法直接调用 Coze 的 Workflow 引擎，而不是手动构造配置
 func (a *CozeK12Adapter) ExecuteWorkflow(ctx *entity.AdapterContext) (*entity.WorkflowResult, error) {
@@ -263,7 +264,7 @@ func (a *CozeK12Adapter) ExecuteWorkflow(ctx *entity.AdapterContext) (*entity.Wo
 	// 2. 从 Metadata 获取执行配置（带默认值）
 	var userID, connectorID int64
 	var connectorUID string
-	
+
 	if ctx.Metadata != nil {
 		if uid, ok := ctx.Metadata["user_id"].(int64); ok {
 			userID = uid
@@ -275,7 +276,7 @@ func (a *CozeK12Adapter) ExecuteWorkflow(ctx *entity.AdapterContext) (*entity.Wo
 			connectorUID = cuid
 		}
 	}
-	
+
 	// 如果没有提供，使用默认值
 	if userID == 0 {
 		userID = 1 // 默认用户
@@ -359,7 +360,7 @@ func (a *CozeK12Adapter) ExecuteWorkflowStream(ctx *entity.AdapterContext, callb
 	// 2. 从 Metadata 获取执行配置（带默认值）
 	var userID, connectorID int64
 	var connectorUID string
-	
+
 	if ctx.Metadata != nil {
 		if uid, ok := ctx.Metadata["user_id"].(int64); ok {
 			userID = uid
@@ -371,7 +372,7 @@ func (a *CozeK12Adapter) ExecuteWorkflowStream(ctx *entity.AdapterContext, callb
 			connectorUID = cuid
 		}
 	}
-	
+
 	if userID == 0 {
 		userID = 1
 	}
@@ -478,7 +479,7 @@ func (a *CozeK12Adapter) CustomizeWorkflow(ctx *entity.AdapterContext) (*entity.
 			"execution_time": result.ExecutionTime,
 		},
 		Nodes:   []*entity.NodeConfig{}, // Coze Workflow 管理节点，这里留空
-		Timeout: 300,                     // 默认 5 分钟超时
+		Timeout: 300,                    // 默认 5 分钟超时
 	}
 
 	return config, nil

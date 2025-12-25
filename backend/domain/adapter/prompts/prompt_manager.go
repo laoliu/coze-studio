@@ -180,11 +180,11 @@ const (
 	// 学习目标生成
 	PromptObjectiveConcept    = "概念理解活动"
 	PromptObjectiveExperiment = "实验探究活动"
-	
+
 	// 叙事生成
 	PromptNarrativeConcept = "概念教学叙事"
 	PromptNarrativeProject = "项目式学习叙事"
-	
+
 	// 其他
 	PromptContentSearch = "内容搜索查询生成"
 	PromptQualityAssess = "质量评估"

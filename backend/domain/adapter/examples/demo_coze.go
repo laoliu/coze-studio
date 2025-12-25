@@ -1,5 +1,7 @@
 // Copyright 2025 Coze Studio. All rights reserved.
 
+//go:build ignore
+
 package examples
 
 import (
@@ -180,9 +182,9 @@ func runCozeAdapterDemo(adapter *CozeK12Adapter) {
 		Domain:  userInput.Domain,
 		Grade:   10, // 高一
 		Metadata: map[string]any{
-			"user_id":       int64(1),          // 演示用户 ID
-			"connector_id":  int64(1),          // 演示 Connector ID
-			"connector_uid": "demo_user",       // 演示用户标识
+			"user_id":       int64(1),    // 演示用户 ID
+			"connector_id":  int64(1),    // 演示 Connector ID
+			"connector_uid": "demo_user", // 演示用户标识
 		},
 	}
 
@@ -202,22 +204,22 @@ func runCozeAdapterDemo(adapter *CozeK12Adapter) {
 		fmt.Println("   这是预期的，因为演示环境中可能没有创建对应的 Workflow")
 		fmt.Println("   在生产环境中，需要先创建这些 Workflow")
 		fmt.Println()
-		
+
 		// 为了演示继续，使用 mock 数据
 		fmt.Println("📝 Using mock workflow result for demo continuation...")
 		workflowResult = &entity.WorkflowResult{
 			WorkflowID: "1000001",
 			Status:     "success",
 			Output: map[string]any{
-				"topic":       userInput.Topic,
-				"domain":      userInput.Domain,
-				"grade":       "10",
-				"title":       "光合作用 - 概念理解",
-				"objectives":  objectives,
-				"content":     contents,
-				"duration":    userInput.Duration,
-				"assessment":  "概念测试、实验观察",
-				"materials":   []string{"显微镜", "植物叶片", "PPT"},
+				"topic":        userInput.Topic,
+				"domain":       userInput.Domain,
+				"grade":        "10",
+				"title":        "光合作用 - 概念理解",
+				"objectives":   objectives,
+				"content":      contents,
+				"duration":     userInput.Duration,
+				"assessment":   "概念测试、实验观察",
+				"materials":    []string{"显微镜", "植物叶片", "PPT"},
 				"instructions": "1. 导入\n2. 概念讲解\n3. 实验观察\n4. 总结",
 			},
 			ExecutionTime: 3500,
