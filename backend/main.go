@@ -105,16 +105,28 @@ func startHttpServer() {
 }
 
 func loadEnv() (err error) {
+	// 获取当前工作目录用于调试
+	cwd, cwdErr := os.Getwd()
+	if cwdErr != nil {
+		return fmt.Errorf("get working directory failed, err=%w", cwdErr)
+	}
+
 	appEnv := os.Getenv("APP_ENV")
 	fileName := ternary.IFElse(appEnv == "", ".env", ".env."+appEnv)
 
-	logs.Infof("load env file: %s", fileName)
+	logs.Infof("load env file: %s (working directory: %s)", fileName, cwd)
+
+	// 检查文件是否存在
+	if _, statErr := os.Stat(fileName); os.IsNotExist(statErr) {
+		return fmt.Errorf("env file does not exist: %s (working directory: %s)", fileName, cwd)
+	}
 
 	err = godotenv.Load(fileName)
 	if err != nil {
-		return fmt.Errorf("load env file(%s) failed, err=%w", fileName, err)
+		return fmt.Errorf("load env file(%s) failed (working directory: %s), err=%w", fileName, cwd, err)
 	}
 
+	logs.Infof("✅ successfully loaded env file: %s", fileName)
 	return err
 }
 
