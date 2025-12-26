@@ -41,6 +41,9 @@ const (
 // DifficultyLevel 难度等级
 type DifficultyLevel string
 
+// Difficulty 难度等级别名（兼容性）
+type Difficulty = DifficultyLevel
+
 const (
 	DifficultyBasic    DifficultyLevel = "basic"    // 基础
 	DifficultyImprove  DifficultyLevel = "improve"  // 提高
@@ -72,6 +75,9 @@ type LearningResource struct {
 	Duration    int             `json:"duration"`     // 时长（分钟）
 	Source      string          `json:"source"`       // 来源
 }
+
+// Resource 学习资源别名（兼容性）
+type Resource = LearningResource
 
 // ResourceType 资源类型
 type ResourceType string

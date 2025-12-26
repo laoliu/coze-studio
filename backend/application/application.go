@@ -23,6 +23,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/coze-dev/coze-studio/backend/api/handler/coze"
+	"github.com/coze-dev/coze-studio/backend/api/router"
 	"github.com/coze-dev/coze-studio/backend/application/permission"
 
 	"github.com/coze-dev/coze-studio/backend/application/app"
@@ -173,6 +174,9 @@ func Init(ctx context.Context) (err error) {
 
 	// Initialize Adapter Service
 	initAdapterService(infra.DB, infra.IDGenSVC)
+
+	// 设置路由所需的数据库实例（用于K12管理API）
+	router.SetDB(infra.DB)
 
 	return nil
 }
