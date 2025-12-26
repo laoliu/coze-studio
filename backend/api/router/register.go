@@ -43,6 +43,9 @@ func GeneratedRegister(r *server.Hertz) {
 	// 注册 Adapter API 路由
 	registerAdapterRoutes(r)
 
+	// 注册 K12 Adapter API 路由
+	registerK12AdapterRoutes(r)
+
 	staticFileRegister(r)
 }
 
@@ -132,4 +135,26 @@ func registerAdapterRoutes(r *server.Hertz) {
 	}
 
 	logs.Infof("Adapter API routes registered")
+}
+
+// registerK12AdapterRoutes 注册 K12 Adapter API 路由
+func registerK12AdapterRoutes(r *server.Hertz) {
+	k12Handler := cozeHandler.NewK12AdapterHandler()
+
+	k12API := r.Group("/api/adapter/k12")
+	{
+		// 分析用户输入
+		k12API.POST("/analyze", k12Handler.AnalyzeInput)
+
+		// 生成学习计划
+		k12API.POST("/generate-plan", k12Handler.GenerateLearningPlan)
+
+		// 获取知识点详情
+		k12API.GET("/knowledge/:id", k12Handler.GetKnowledgeDetails)
+
+		// 生成习题集
+		k12API.POST("/exercises", k12Handler.GenerateExercises)
+	}
+
+	logs.Infof("K12 Adapter API routes registered")
 }
