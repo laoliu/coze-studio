@@ -40,6 +40,9 @@ func GeneratedRegister(r *server.Hertz) {
 	// 注册自定义路由 - 节点推荐系统
 	registerRecommendationRoutes(r)
 
+	// 注册 Adapter API 路由
+	registerAdapterRoutes(r)
+
 	staticFileRegister(r)
 }
 
@@ -109,4 +112,24 @@ func registerRecommendationRoutes(r *server.Hertz) {
 	}
 
 	logs.Infof("Workflow API routes registered (node recommendation + workflow generation)")
+}
+
+// registerAdapterRoutes 注册 Adapter API 路由
+func registerAdapterRoutes(r *server.Hertz) {
+	adapterAPI := r.Group("/api/adapter")
+	{
+		// 适配器管理
+		adapterAPI.POST("/register", cozeHandler.RegisterAdapter)
+		adapterAPI.GET("/list", cozeHandler.ListAdapters)
+		adapterAPI.GET("/:adapter_id", cozeHandler.GetAdapterInfo)
+
+		// 适配器执行
+		adapterAPI.POST("/:adapter_id/execute", cozeHandler.ExecuteAdapter)
+
+		// 用户适配器
+		adapterAPI.POST("/:adapter_id/install", cozeHandler.InstallAdapter)
+		adapterAPI.GET("/installed", cozeHandler.GetInstalledAdapters)
+	}
+
+	logs.Infof("Adapter API routes registered")
 }

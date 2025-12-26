@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
+	"github.com/coze-dev/coze-studio/backend/api/handler/coze"
 	"github.com/coze-dev/coze-studio/backend/application/permission"
 
 	"github.com/coze-dev/coze-studio/backend/application/app"
@@ -76,6 +79,7 @@ import (
 	progressBarImpl "github.com/coze-dev/coze-studio/backend/infra/document/progressbar/impl/progressbar"
 	"github.com/coze-dev/coze-studio/backend/infra/eventbus"
 	implEventbus "github.com/coze-dev/coze-studio/backend/infra/eventbus/impl"
+	"github.com/coze-dev/coze-studio/backend/infra/idgen"
 	"github.com/coze-dev/coze-studio/backend/infra/sqlparser"
 	sqlparserImpl "github.com/coze-dev/coze-studio/backend/infra/sqlparser/impl/sqlparser"
 	"github.com/coze-dev/coze-studio/backend/pkg/ctxcache"
@@ -166,6 +170,9 @@ func Init(ctx context.Context) (err error) {
 	crossupload.SetDefaultSVC(uploadImpl.InitDomainService(basicServices.uploadSVC.UploadSVC))
 
 	crossapp.SetDefaultSVC(appImpl.InitDomainService(complexServices.appSVC.DomainSVC))
+
+	// Initialize Adapter Service
+	initAdapterService(infra.DB, infra.IDGenSVC)
 
 	return nil
 }
@@ -394,4 +401,9 @@ func (p *primaryServices) toConversationComponents(singleAgentSVC *singleagent.S
 		ImageX:               infra.ImageXClient,
 		SingleAgentDomainSVC: singleAgentSVC.DomainSVC,
 	}
+}
+
+// initAdapterService initializes the adapter service
+func initAdapterService(db *gorm.DB, idGen idgen.IDGenerator) {
+	coze.InitAdapterService(db, idGen)
 }

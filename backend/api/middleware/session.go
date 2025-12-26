@@ -38,6 +38,7 @@ var noNeedSessionCheckPath = map[string]bool{
 	"/api/passport/web/email/register/v2/": true,
 	"/api/workflow_api/llm_status":         true,
 	"/api/workflow_api/generate":           true,
+	"/api/adapter/":                        true, // Adapter API endpoints
 }
 
 func SessionAuthMW() app.HandlerFunc {
@@ -48,9 +49,20 @@ func SessionAuthMW() app.HandlerFunc {
 			return
 		}
 
-		if noNeedSessionCheckPath[string(ctx.GetRequest().URI().Path())] {
+		path := string(ctx.GetRequest().URI().Path())
+
+		// Check exact match first
+		if noNeedSessionCheckPath[path] {
 			ctx.Next(c)
 			return
+		}
+
+		// Check prefix match for paths like /api/adapter/*
+		for prefix := range noNeedSessionCheckPath {
+			if strings.HasPrefix(path, prefix) {
+				ctx.Next(c)
+				return
+			}
 		}
 
 		s := ctx.Cookie(entity.SessionKey)
