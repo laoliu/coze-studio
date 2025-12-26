@@ -124,18 +124,43 @@ func (a *Analyzer) detectGrade(input string) models.GradeLevel {
 func (a *Analyzer) detectKnowledge(input string, subject models.Subject) (string, string, float64) {
 	// 数学知识点关键词映射
 	mathKnowledgeKeywords := map[string][]string{
-		"quadratic_functions": {"二次函数", "抛物线", "quadratic function"},
-		"quadratic_equations": {"一元二次方程", "quadratic equation"},
-		"linear_functions":    {"一次函数", "线性函数", "linear function"},
-		"linear_equations_systems": {"二元一次方程组", "方程组", "system of equations"},
-		"equations":    {"一元一次方程", "一次方程", "linear equation"},
-		"real_numbers": {"实数", "real number"},
-		"quadratic_functions_advanced": {"二次函数综合", "二次函数应用"},
-		"inverse_proportional_functions": {"反比例函数", "inverse function"},
+		"quadratic_functions":              {"二次函数", "抛物线", "quadratic function"},
+		"quadratic_equations":              {"一元二次方程", "quadratic equation"},
+		"linear_functions":                 {"一次函数", "线性函数", "linear function"},
+		"linear_equations_systems":         {"二元一次方程组", "方程组", "system of equations"},
+		"equations":                        {"一元一次方程", "一次方程", "linear equation"},
+		"real_numbers":                     {"实数", "real number"},
+		"quadratic_functions_advanced":     {"二次函数综合", "二次函数应用"},
+		"inverse_proportional_functions":   {"反比例函数", "inverse function"},
 	}
 
+	// 物理知识点关键词映射
+	physicsKnowledgeKeywords := map[string][]string{
+		"ohms_law":             {"欧姆定律", "ohm's law", "电阻定律"},
+		"electrical_power":     {"电功率", "electrical power", "焦耳定律", "电功"},
+		"circuit_analysis":     {"电路分析", "电路计算", "动态电路"},
+		"motion_and_forces":    {"牛顿第一定律", "惯性", "二力平衡", "运动和力"},
+		"forces":               {"力的概念", "弹力", "重力", "摩擦力"},
+		"speed":                {"速度", "匀速运动", "平均速度"},
+		"pressure":             {"压强", "液体压强", "大气压"},
+		"buoyancy":             {"浮力", "阿基米德原理"},
+		"work_and_energy":      {"功", "机械能", "动能", "势能"},
+		"simple_machines":      {"杠杆", "滑轮", "机械效率"},
+		"electricity_basics":   {"电流", "电路", "串联", "并联"},
+		"voltage_resistance":   {"电压", "电阻"},
+		"light_reflection":     {"光的反射", "平面镜"},
+		"light_refraction":     {"光的折射", "透镜", "凸透镜"},
+	}
+
+	var keywordMap map[string][]string
 	if subject == models.SubjectMath {
-		for knowledgeID, keywords := range mathKnowledgeKeywords {
+		keywordMap = mathKnowledgeKeywords
+	} else if subject == models.SubjectPhysics {
+		keywordMap = physicsKnowledgeKeywords
+	}
+
+	if keywordMap != nil {
+		for knowledgeID, keywords := range keywordMap {
 			for _, keyword := range keywords {
 				if strings.Contains(input, keyword) {
 					knowledge := GetKnowledgePoint(knowledgeID)

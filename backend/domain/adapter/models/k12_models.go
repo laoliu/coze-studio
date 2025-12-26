@@ -1,4 +1,3 @@
-package models
 /*
  * Copyright 2025 coze-dev Authors
  *
