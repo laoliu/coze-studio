@@ -114,7 +114,7 @@ func (a *CozeK12Adapter) ParseRequest(input *entity.UserInput) (*entity.AdapterC
 // GenerateLearningObjectives 生成学习目标（使用 Coze LLM）
 func (a *CozeK12Adapter) GenerateLearningObjectives(ctx *entity.AdapterContext) ([]entity.LearningObjective, error) {
 	// 1. 渲染提示词模板
-	prompt, err := a.promptMgr.RenderPrompt("generate_objectives", map[string]any{
+	prompt, err := a.promptMgr.Render("generate_objectives", map[string]any{
 		"Topic":        ctx.Input.Topic,
 		"Domain":       ctx.Input.Domain,
 		"Grade":        ctx.Grade,
@@ -132,11 +132,7 @@ func (a *CozeK12Adapter) GenerateLearningObjectives(ctx *entity.AdapterContext) 
 	}
 
 	// 3. 调用 Coze 的 ChatModel (通过 Eino)
-	resp, err := a.chatModel.Generate(ctx.Context, messages,
-		model.WithResponseFormat(&model.ResponseFormat{
-			Type: model.ResponseFormatJSONObject,
-		}),
-	)
+	resp, err := a.chatModel.Generate(ctx.Context, messages)
 	if err != nil {
 		return nil, fmt.Errorf("llm generate failed: %w", err)
 	}
@@ -175,7 +171,7 @@ func (a *CozeK12Adapter) DiscoverContent(ctx *entity.AdapterContext, objectives 
 
 // generateSearchKeywords 使用 LLM 生成搜索关键词
 func (a *CozeK12Adapter) generateSearchKeywords(ctx *entity.AdapterContext, objectives []entity.LearningObjective) ([]string, error) {
-	prompt, err := a.promptMgr.RenderPrompt("generate_search_keywords", map[string]any{
+	prompt, err := a.promptMgr.Render("generate_search_keywords", map[string]any{
 		"Topic":      ctx.Input.Topic,
 		"Domain":     ctx.Input.Domain,
 		"Grade":      ctx.Grade,
@@ -190,9 +186,6 @@ func (a *CozeK12Adapter) generateSearchKeywords(ctx *entity.AdapterContext, obje
 	}
 
 	resp, err := a.chatModel.Generate(ctx.Context, messages,
-		model.WithResponseFormat(&model.ResponseFormat{
-			Type: model.ResponseFormatJSONObject,
-		}),
 	)
 	if err != nil {
 		return nil, err
@@ -210,7 +203,7 @@ func (a *CozeK12Adapter) generateSearchKeywords(ctx *entity.AdapterContext, obje
 
 // recommendContentByLLM 当数据库无内容时，使用 LLM 推荐
 func (a *CozeK12Adapter) recommendContentByLLM(ctx *entity.AdapterContext, objectives []entity.LearningObjective) ([]*entity.ContentItem, error) {
-	prompt, err := a.promptMgr.RenderPrompt("recommend_content", map[string]any{
+	prompt, err := a.promptMgr.Render("recommend_content", map[string]any{
 		"Topic":      ctx.Input.Topic,
 		"Domain":     ctx.Input.Domain,
 		"Grade":      ctx.Grade,
@@ -225,9 +218,6 @@ func (a *CozeK12Adapter) recommendContentByLLM(ctx *entity.AdapterContext, objec
 	}
 
 	resp, err := a.chatModel.Generate(ctx.Context, messages,
-		model.WithResponseFormat(&model.ResponseFormat{
-			Type: model.ResponseFormatJSONObject,
-		}),
 	)
 	if err != nil {
 		return nil, err
@@ -488,7 +478,7 @@ func (a *CozeK12Adapter) CustomizeWorkflow(ctx *entity.AdapterContext) (*entity.
 // FormatOutput 格式化输出（使用 LLM 生成叙事性文本）
 func (a *CozeK12Adapter) FormatOutput(workflowResult *entity.WorkflowResult) (*entity.AdapterOutput, error) {
 	// 1. 渲染提示词
-	prompt, err := a.promptMgr.RenderPrompt("generate_narrative", map[string]any{
+	prompt, err := a.promptMgr.Render("generate_narrative", map[string]any{
 		"WorkflowID": workflowResult.WorkflowID,
 		"Status":     workflowResult.Status,
 		"Output":     workflowResult.Output,
@@ -523,7 +513,7 @@ func (a *CozeK12Adapter) FormatOutput(workflowResult *entity.WorkflowResult) (*e
 // ValidateOutput 验证输出质量
 func (a *CozeK12Adapter) ValidateOutput(output *entity.AdapterOutput) (*entity.QualityReport, error) {
 	// 1. 渲染质量检查提示词
-	prompt, err := a.promptMgr.RenderPrompt("validate_quality", map[string]any{
+	prompt, err := a.promptMgr.Render("validate_quality", map[string]any{
 		"Content":  output.Content,
 		"Metadata": output.Metadata,
 	})
@@ -538,9 +528,6 @@ func (a *CozeK12Adapter) ValidateOutput(output *entity.AdapterOutput) (*entity.Q
 	}
 
 	resp, err := a.chatModel.Generate(context.Background(), messages,
-		model.WithResponseFormat(&model.ResponseFormat{
-			Type: model.ResponseFormatJSONObject,
-		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("llm generate failed: %w", err)

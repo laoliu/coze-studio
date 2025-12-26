@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-//go:build ignore
-
 package examples
 
 import (
@@ -24,10 +22,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coze-dev/coze-studio/backend/bizpkg/config"
-	"github.com/coze-dev/coze-studio/backend/infra/mysql"
-	"github.com/coze-dev/coze-studio/backend/infra/storage"
 	"github.com/joho/godotenv"
+
+	"github.com/coze-dev/coze-studio/backend/bizpkg/config"
+	"github.com/coze-dev/coze-studio/backend/infra/orm/impl/mysql"
+	storage "github.com/coze-dev/coze-studio/backend/infra/storage/impl"
 )
 
 // InitCozeConfig initializes Coze configuration for standalone programs

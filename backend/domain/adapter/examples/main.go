@@ -11,7 +11,7 @@ import (
 // RunCLI 运行命令行接口
 func RunCLI() {
 	// 定义命令行参数
-	demoType := flag.String("demo", "k12", "Demo type: k12, registry, or all")
+	demoType := flag.String("demo", "k12", "Demo type: k12, coze, coze-demo, registry, or all")
 	flag.Parse()
 
 	fmt.Println("==============================================")
@@ -22,6 +22,10 @@ func RunCLI() {
 	switch *demoType {
 	case "k12":
 		DemoK12Adapter()
+	case "coze":
+		DemoCozeK12Adapter()
+	case "coze-demo":
+		DemoCozeK12AdapterNoDB()
 	case "registry":
 		DemoAdapterRegistry()
 	case "all":
@@ -30,10 +34,12 @@ func RunCLI() {
 		DemoAdapterRegistry()
 	default:
 		fmt.Printf("Unknown demo type: %s\n", *demoType)
-		fmt.Println("Available options: k12, registry, all")
+		fmt.Println("Available options: k12, coze, coze-demo, registry, all")
 		fmt.Println()
-		fmt.Println("Note: 'real' and 'coze' demos require full Coze infrastructure")
-		fmt.Println("      and are currently disabled. See coze_*.go files for details.")
+		fmt.Println("Note:")
+		fmt.Println("  - 'k12' and 'registry' use mock data (no dependencies)")
+		fmt.Println("  - 'coze' uses real Coze LLM (requires Model ID and database)")
+		fmt.Println("  - 'coze-demo' shows Coze integration flow (no database needed)")
 		os.Exit(1)
 	}
 
